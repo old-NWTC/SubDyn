@@ -1,29 +1,25 @@
 --------------------------------------------------------------------------------
 -------------- SubDyn MultiMember Support Structure Input File -----------------
-Example of Jacket Structure Input File. A TP Platform Input File needs to be provided as well.
+Example of Jacket Structure Input File. This is for the little house example.Note 5 modes not enough to capture weight properly!
 -------------------------- SIMULATION CONTROL  ---------------------------------
 True       Echo        - Echo input data to "echo.out" (flag)
 0.0        SDdeltaT    - Local Integration Step. If 0.0, the glue-code integration step will be used.
 1	   IntMethod   - Integration Method (0/1/2/3 = GlueCode(tight Coupling)/RK4/AB4/ABM4)  
 -------------------- FEA and CRAIG-BAMPTON PARAMETERS---------------------------
-3          FEMMod     - FEM switch: element model in the FEM: 1= Euler-Bernoulli(E-B) ; 2=Tapered E-B; 3= 2-node Timoshenko;  4= 2-node tapered Timoshenko
+1          FEMMod     - FEM switch: element model in the FEM: 1= Euler-Bernoulli(E-B) ; 2=Tapered E-B; 3= 2-node Timoshenko;  4= 2-node tapered Timoshenko
 1          NDiv       - Number of sub-elements per member
 true      CBMod      - If True perform C-B reduction, else full FEM dofs will be retained. IF True, select modes to retain in C-B
-3	      Nmodes     - Number of internal modes to retain (ignored if CMMod=Flase). If Nmodes=0 --> Guyan Reduction. If Nmodes>0, list Nmodes structural damping ratios for each retained mode (% of critical)
-<<<<<<< .mine
-1 1 1     JDampings  -  Damping Ratios  for each retained mode (% of critical)
-=======
-0.01 0.01 0.01     JDampings  -  Damping Ratios  for each retained mode (% of critical)
->>>>>>> .r110
+12	      Nmodes     - Number of internal modes to retain (ignored if CMMod=Flase). If Nmodes=0 --> Guyan Reduction. If Nmodes>0, list Nmodes structural damping ratios for each retained mode (% of critical)
+20 20 20 20 20 20 20 20 20 20 20 20      JDampings  -  Damping Ratios  for each retained mode (% of critical)
 ---- STRUCTURE JOINTS: joints connect structure members (~Hydrodyn Input File)---
 5	    NJoints     - Number of joints (-)   
 JointID          JointXss                 JointYss               JointZss	-Coordinates of Member joints in SS-Coordinate System
 (-)                 (m)                     (m)                     (m)
-1		    0.0			   0.0		                0.0		   		
-2		    0.0			   0.0		               20.0
-3		   15.0			   0.0		               40.0
-4		   30.0			   0.0		               20.0
-5		   30.0			   0.0		                0.0
+1		  -15.0			   0.0		                0.0		   		
+2		  -15.0			   0.0		               20.0
+3		    0.0			   0.0		               40.0
+4		   15.0			   0.0		               20.0
+5		   15.0			   0.0		                0.0
 ------------------- BASE REACTION JOINTS: T/F for Locked/Free DOF @ each Reaction Node ---------------------
 2	NReact      - Number of Joints with reaction forces; be sure to remove all rigid motion dofs of the structure  (else det([K])=[0])
 RJointID	 RctTDxss     RctTDYss    RctTDZss   RctRDXss   RctRDYss   RctRDZss	   - Global Coordinate System
