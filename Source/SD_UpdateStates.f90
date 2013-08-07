@@ -240,17 +240,17 @@ SUBROUTINE SubDyn_CalcOutput( t, u, p, x, xd, z, OtherState, y, ErrStat, ErrMsg 
   
    !Calculate accelerations even though they may not be necessary, in the future we may put 
    ! a condition on the type of input to speed up, if forces are requested we need them
-    ! OtherState%Udotdot(1:p%URbarL)= matmul(p%Bbar_13,u%UFL(L2:L3-1))
+    ! OtherState%Udotdot(1:p%URbarL)= matmul(p%Dbar_13,u%UFL(L2:L3-1))
       
-    ! OtherState%Udotdot(p%URbarL+1:p%URbarL+p%DOFL)= matmul(p%Abar_21,x%qm) + matmul(p%Abar_22,x%qmdot) + & 
-    !                                         matmul(p%Bbar_23,u%UFL(L2:L3-1)) +  matmul(p%Bbar_24,u%UFL(L3:p%uL)) + &
+    ! OtherState%Udotdot(p%URbarL+1:p%URbarL+p%DOFL)= matmul(p%Cbar_21,x%qm) + matmul(p%Cbar_22,x%qmdot) + & 
+    !                                         matmul(p%Dbar_23,u%UFL(L2:L3-1)) +  matmul(p%Dbar_24,u%UFL(L3:p%uL)) + &
     !                                               p%Fbar_21
-OtherState%Udotdot(1:p%URbarL) = matmul( p%Bbar_13, udotdot_TP ) ! This is Ubardotdot_R which is not being used at this point. GJH 5/23/13
+OtherState%Udotdot(1:p%URbarL) = matmul( p%Dbar_13, udotdot_TP ) ! This is Ubardotdot_R which is not being used at this point. GJH 5/23/13
    
    
    OtherState%Udotdot(p%URbarL+1:p%URbarL+p%DOFL) =                               & 
-                  matmul( p%Abar_21, x%qm       ) + matmul( p%Abar_22, x%qmdot ) + & 
-                  matmul( p%Bbar_23, udotdot_TP ) + matmul( p%Bbar_24, UFL     ) + &
+                  matmul( p%Cbar_21, x%qm       ) + matmul( p%Cbar_22, x%qmdot ) + & 
+                  matmul( p%Dbar_23, udotdot_TP ) + matmul( p%Dbar_24, UFL     ) + &
                           p%Fbar_21
                                   !_____________________________________!
                                 ! CALCULATE OUTPUT TO BE WRITTEN TO FILE !
