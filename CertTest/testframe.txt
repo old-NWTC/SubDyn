@@ -10,7 +10,7 @@ True       Echo        - Echo input data to "echo.out" (flag)
 1          NDiv       - Number of sub-elements per member
 true      CBMod      - If True perform C-B reduction, else full FEM dofs will be retained. IF True, select modes to retain in C-B
 12	      Nmodes     - Number of internal modes to retain (ignored if CMMod=Flase). If Nmodes=0 --> Guyan Reduction. If Nmodes>0, list Nmodes structural damping ratios for each retained mode (% of critical)
-20 20 20 20 20 20 20 20 20 20 20 20      JDampings  -  Damping Ratios  for each retained mode (% of critical)
+90 90 90 90 90 90 90 90 90 90 90 90      JDampings  -  Damping Ratios  for each retained mode (% of critical)
 ---- STRUCTURE JOINTS: joints connect structure members (~Hydrodyn Input File)---
 5	    NJoints     - Number of joints (-)   
 JointID          JointXss                 JointYss               JointZss	-Coordinates of Member joints in SS-Coordinate System
@@ -53,8 +53,8 @@ COSMID	COSM11    COSM12      COSM13       COSM21      COSM22      COSM23     COS
 ------------------------ JOINT ADDITIONAL CONCENTRATED MASSES--------------------------
 1        NCmass	     - Number of joints with concentrated masses; Global Coordinate System
 CMJointID	JMass		JMXX	        JMYY	        JMZZ
-      	[kg]		[kg*m^2]    [kg*m^2]	    [kg.m^2]
-3	  3.5000e+05	 0.0	        0.0 	        0.0
+      	       [kg]		[kg*m^2]      [kg*m^2]	    [kg.m^2]
+3	  3.5000e+05	         0.0	        0.0 	        0.0
 ---------------------------- OUTPUT: SUMMARY & OUTFILE ------------------------------
 True       SSSum    - Output a Summary File True or False.It contains: matrices K,M  and C-B reduced M_BB, M-BM, K_BB, K_MM(OMG^2), PHI_R, PHI_M. IT can also contain COSMs if requested
 True       OutCOSM  - Output cosine matrices with the selected output member forces (flag)
