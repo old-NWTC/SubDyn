@@ -1,5 +1,5 @@
 !STARTOFREGISTRYGENERATEDFILE './SubDyn_Types.f90'
-!
+
 ! WARNING This file is generated automatically by the FAST registry
 ! Do not edit.  Your changes to this file will be lost.
 !
@@ -30,6 +30,7 @@ MODULE SubDyn_Types
 !---------------------------------------------------------------------------------------------------------------------------------
 USE NWTC_Library
 IMPLICIT NONE
+! =========  MeshAuxDataType  =======
   TYPE, PUBLIC :: MeshAuxDataType
     INTEGER(IntKi)  :: MemberID 
     INTEGER(IntKi)  :: NOutCnt 
@@ -46,6 +47,8 @@ IMPLICIT NONE
     REAL(ReKi) , DIMENSION(1:12,1:12,1:2)  :: Ke2 
     REAL(ReKi) , DIMENSION(1:12,1:2)  :: Fg2 
   END TYPE MeshAuxDataType
+! =======================
+! =========  ElemPropType  =======
   TYPE, PUBLIC :: ElemPropType
     REAL(ReKi)  :: Area 
     REAL(ReKi)  :: Length 
@@ -59,10 +62,13 @@ IMPLICIT NONE
     REAL(ReKi)  :: Rho 
     REAL(ReKi) , DIMENSION(1:3,1:3)  :: DirCos 
   END TYPE ElemPropType
+! =======================
+! =========  SD_InitInputType  =======
   TYPE, PUBLIC :: SD_InitInputType
     CHARACTER(1024)  :: SDInputFile 
     REAL(ReKi)  :: g 
     REAL(ReKi) , DIMENSION(1:3)  :: TP_RefPoint 
+    REAL(ReKi)  :: SubRotateZ 
     CHARACTER(1024)  :: SubDynSum 
     CHARACTER(1024)  :: RootName 
     REAL(ReKi)  :: DT 
@@ -110,6 +116,8 @@ IMPLICIT NONE
     INTEGER(IntKi) , DIMENSION(:,:), ALLOCATABLE  :: NodesConnN 
     INTEGER(IntKi) , DIMENSION(:,:), ALLOCATABLE  :: NodesConnE 
   END TYPE SD_InitInputType
+! =======================
+! =========  SD_InitOutputType  =======
   TYPE, PUBLIC :: SD_InitOutputType
     CHARACTER(10) , DIMENSION(:), ALLOCATABLE  :: WriteOutputHdr 
     CHARACTER(10) , DIMENSION(:), ALLOCATABLE  :: WriteOutputUnt 
@@ -119,30 +127,42 @@ IMPLICIT NONE
     LOGICAL  :: SSSum 
     CHARACTER(10) , DIMENSION(:), ALLOCATABLE  :: SSOutList 
   END TYPE SD_InitOutputType
+! =======================
+! =========  SD_ContinuousStateType  =======
   TYPE, PUBLIC :: SD_ContinuousStateType
     REAL(ReKi)  :: DummyContState 
     REAL(ReKi) , DIMENSION(:), ALLOCATABLE  :: qm 
     REAL(ReKi) , DIMENSION(:), ALLOCATABLE  :: qmdot 
     REAL(ReKi) , DIMENSION(:), ALLOCATABLE  :: qmdotdot 
   END TYPE SD_ContinuousStateType
+! =======================
+! =========  SD_DiscreteStateType  =======
   TYPE, PUBLIC :: SD_DiscreteStateType
     REAL(ReKi)  :: DummyDiscState 
   END TYPE SD_DiscreteStateType
+! =======================
+! =========  SD_ConstraintStateType  =======
   TYPE, PUBLIC :: SD_ConstraintStateType
     REAL(ReKi)  :: DummyConstrState 
   END TYPE SD_ConstraintStateType
+! =======================
+! =========  SD_OtherStateType  =======
   TYPE, PUBLIC :: SD_OtherStateType
     TYPE(SD_ContinuousStateType) , DIMENSION(:), ALLOCATABLE  :: xdot 
     INTEGER(IntKi)  :: n 
     REAL(ReKi) , DIMENSION(:), ALLOCATABLE  :: Udotdot 
     REAL(ReKi) , DIMENSION(:), ALLOCATABLE  :: Y2 
   END TYPE SD_OtherStateType
+! =======================
+! =========  SD_OutVar_Type  =======
   TYPE, PUBLIC :: SD_OutVar_Type
     INTEGER(IntKi)  :: Indx 
     INTEGER(IntKi)  :: SignM 
     CHARACTER(10)  :: Units 
     CHARACTER(10)  :: Name 
   END TYPE SD_OutVar_Type
+! =======================
+! =========  SD_ParameterType  =======
   TYPE, PUBLIC :: SD_ParameterType
     REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: A_21 
     REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: A_22 
@@ -161,11 +181,11 @@ IMPLICIT NONE
     REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: D2_21 
     REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: D2_32 
     REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: D2_42 
-    REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: Abar_21 
-    REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: Abar_22 
-    REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: Bbar_13 
-    REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: Bbar_23 
-    REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: Bbar_24 
+    REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: Cbar_21 
+    REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: Cbar_22 
+    REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: Dbar_13 
+    REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: Dbar_23 
+    REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: Dbar_24 
     REAL(ReKi) , DIMENSION(:), ALLOCATABLE  :: Fbar_21 
     REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: MBB 
     REAL(ReKi) , DIMENSION(:,:), ALLOCATABLE  :: KBB 
@@ -219,63 +239,100 @@ IMPLICIT NONE
     INTEGER(IntKi)  :: OutDec 
     INTEGER(IntKi)  :: MaxOUtPts 
   END TYPE SD_ParameterType
+! =======================
+! =========  SD_InputType  =======
   TYPE, PUBLIC :: SD_InputType
     TYPE(MeshType)  :: TPMesh 
     TYPE(MeshType)  :: LMesh 
   END TYPE SD_InputType
+! =======================
+! =========  SD_OutputType  =======
   TYPE, PUBLIC :: SD_OutputType
     TYPE(MeshType)  :: Y1Mesh 
     TYPE(MeshType)  :: Y2Mesh 
     REAL(ReKi) , DIMENSION(:), ALLOCATABLE  :: WriteOutput 
   END TYPE SD_OutputType
+! =======================
+! =========  SD_PartialOutputPInputType  =======
   TYPE, PUBLIC :: SD_PartialOutputPInputType
     TYPE(SD_InputType)  :: DummyOutput 
   END TYPE SD_PartialOutputPInputType
+! =======================
+! =========  SD_PartialContStatePInputType  =======
   TYPE, PUBLIC :: SD_PartialContStatePInputType
     TYPE(SD_InputType)  :: DummyContState 
   END TYPE SD_PartialContStatePInputType
+! =======================
+! =========  SD_PartialDiscStatePInputType  =======
   TYPE, PUBLIC :: SD_PartialDiscStatePInputType
     TYPE(SD_InputType)  :: DummyDiscState 
   END TYPE SD_PartialDiscStatePInputType
+! =======================
+! =========  SD_PartialConstrStatePInputType  =======
   TYPE, PUBLIC :: SD_PartialConstrStatePInputType
     TYPE(SD_InputType)  :: DummyConstrState 
   END TYPE SD_PartialConstrStatePInputType
+! =======================
+! =========  SD_PartialOutputPContStateType  =======
   TYPE, PUBLIC :: SD_PartialOutputPContStateType
     TYPE(SD_ContinuousStateType)  :: DummyOutput 
   END TYPE SD_PartialOutputPContStateType
+! =======================
+! =========  SD_PartialContStatePContStateType  =======
   TYPE, PUBLIC :: SD_PartialContStatePContStateType
     TYPE(SD_ContinuousStateType)  :: DummyContState 
   END TYPE SD_PartialContStatePContStateType
+! =======================
+! =========  SD_PartialDiscStatePContStateType  =======
   TYPE, PUBLIC :: SD_PartialDiscStatePContStateType
     TYPE(SD_ContinuousStateType)  :: DummyDiscState 
   END TYPE SD_PartialDiscStatePContStateType
+! =======================
+! =========  SD_PartialConstrStatePContStateType  =======
   TYPE, PUBLIC :: SD_PartialConstrStatePContStateType
     TYPE(SD_ContinuousStateType)  :: DummyConstrState 
   END TYPE SD_PartialConstrStatePContStateType
+! =======================
+! =========  SD_PartialOutputPDiscStateType  =======
   TYPE, PUBLIC :: SD_PartialOutputPDiscStateType
     TYPE(SD_DiscreteStateType)  :: DummyOutput 
   END TYPE SD_PartialOutputPDiscStateType
+! =======================
+! =========  SD_PartialContStatePDiscStateType  =======
   TYPE, PUBLIC :: SD_PartialContStatePDiscStateType
     TYPE(SD_DiscreteStateType)  :: DummyContState 
   END TYPE SD_PartialContStatePDiscStateType
+! =======================
+! =========  SD_PartialDiscStatePDiscStateType  =======
   TYPE, PUBLIC :: SD_PartialDiscStatePDiscStateType
     TYPE(SD_DiscreteStateType)  :: DummyDiscState 
   END TYPE SD_PartialDiscStatePDiscStateType
+! =======================
+! =========  SD_PartialConstrStatePDiscStateType  =======
   TYPE, PUBLIC :: SD_PartialConstrStatePDiscStateType
     TYPE(SD_DiscreteStateType)  :: DummyConstrState 
   END TYPE SD_PartialConstrStatePDiscStateType
+! =======================
+! =========  SD_PartialOutputPConstrStateType  =======
   TYPE, PUBLIC :: SD_PartialOutputPConstrStateType
     TYPE(SD_ConstraintStateType)  :: DummyOutput 
   END TYPE SD_PartialOutputPConstrStateType
+! =======================
+! =========  SD_PartialContStatePConstrStateType  =======
   TYPE, PUBLIC :: SD_PartialContStatePConstrStateType
     TYPE(SD_ConstraintStateType)  :: DummyContState 
   END TYPE SD_PartialContStatePConstrStateType
+! =======================
+! =========  SD_PartialDiscStatePConstrStateType  =======
   TYPE, PUBLIC :: SD_PartialDiscStatePConstrStateType
     TYPE(SD_ConstraintStateType)  :: DummyDiscState 
   END TYPE SD_PartialDiscStatePConstrStateType
+! =======================
+! =========  SD_PartialConstrStatePConstrStateType  =======
   TYPE, PUBLIC :: SD_PartialConstrStatePConstrStateType
     TYPE(SD_ConstraintStateType)  :: DummyConstrState 
   END TYPE SD_PartialConstrStatePConstrStateType
+! =======================
 CONTAINS
  SUBROUTINE SD_Copymeshauxdatatype( SrcmeshauxdatatypeData, DstmeshauxdatatypeData, CtrlCode, ErrStat, ErrMsg )
   TYPE(meshauxdatatype), INTENT(INOUT) :: SrcmeshauxdatatypeData
@@ -454,7 +511,7 @@ ENDIF
   Re_Xferred   = Re_Xferred   + SIZE(InData%Fg2)
  END SUBROUTINE SD_Packmeshauxdatatype
 
- SUBROUTINE SD_Unpackmeshauxdatatype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackmeshauxdatatype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -556,7 +613,7 @@ ENDIF
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_Unpackmeshauxdatatype
+ END SUBROUTINE SD_UnPackmeshauxdatatype
 
  SUBROUTINE SD_Copyelemproptype( SrcelemproptypeData, DstelemproptypeData, CtrlCode, ErrStat, ErrMsg )
   TYPE(elemproptype), INTENT(INOUT) :: SrcelemproptypeData
@@ -661,7 +718,7 @@ ENDIF
   Re_Xferred   = Re_Xferred   + SIZE(InData%DirCos)
  END SUBROUTINE SD_Packelemproptype
 
- SUBROUTINE SD_Unpackelemproptype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackelemproptype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -719,7 +776,7 @@ ENDIF
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_Unpackelemproptype
+ END SUBROUTINE SD_UnPackelemproptype
 
  SUBROUTINE SD_CopyInitInput( SrcInitInputData, DstInitInputData, CtrlCode, ErrStat, ErrMsg )
   TYPE(SD_initinputtype), INTENT(INOUT) :: SrcInitInputData
@@ -735,6 +792,7 @@ ENDIF
   DstInitInputData%SDInputFile = SrcInitInputData%SDInputFile
   DstInitInputData%g = SrcInitInputData%g
   DstInitInputData%TP_RefPoint = SrcInitInputData%TP_RefPoint
+  DstInitInputData%SubRotateZ = SrcInitInputData%SubRotateZ
   DstInitInputData%SubDynSum = SrcInitInputData%SubDynSum
   DstInitInputData%RootName = SrcInitInputData%RootName
   DstInitInputData%DT = SrcInitInputData%DT
@@ -946,6 +1004,7 @@ ENDIF
   Int_BufSz  = 0
   Re_BufSz   = Re_BufSz   + 1  ! g
   Re_BufSz    = Re_BufSz    + SIZE( InData%TP_RefPoint )  ! TP_RefPoint 
+  Re_BufSz   = Re_BufSz   + 1  ! SubRotateZ
   Re_BufSz   = Re_BufSz   + 1  ! DT
   Int_BufSz  = Int_BufSz  + 1  ! ErrStat
   Int_BufSz  = Int_BufSz  + 1  ! NJoints
@@ -996,6 +1055,8 @@ ENDIF
   Re_Xferred   = Re_Xferred   + 1
   IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%TP_RefPoint))-1 ) =  PACK(InData%TP_RefPoint ,.TRUE.)
   Re_Xferred   = Re_Xferred   + SIZE(InData%TP_RefPoint)
+  IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(1)-1 ) =  (InData%SubRotateZ )
+  Re_Xferred   = Re_Xferred   + 1
   IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(1)-1 ) =  (InData%DT )
   Re_Xferred   = Re_Xferred   + 1
   IF ( .NOT. OnlySize ) IntKiBuf ( Int_Xferred:Int_Xferred+(1)-1 ) = (InData%ErrStat )
@@ -1124,7 +1185,7 @@ ENDIF
   ENDIF
  END SUBROUTINE SD_PackInitInput
 
- SUBROUTINE SD_UnpackInitInput( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackInitInput( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -1163,6 +1224,8 @@ ENDIF
   OutData%TP_RefPoint = UNPACK(ReKiBuf( Re_Xferred:Re_Xferred+(SIZE(OutData%TP_RefPoint))-1 ),mask1,OutData%TP_RefPoint)
   DEALLOCATE(mask1)
   Re_Xferred   = Re_Xferred   + SIZE(OutData%TP_RefPoint)
+  OutData%SubRotateZ = ReKiBuf ( Re_Xferred )
+  Re_Xferred   = Re_Xferred   + 1
   OutData%DT = ReKiBuf ( Re_Xferred )
   Re_Xferred   = Re_Xferred   + 1
   OutData%ErrStat = IntKiBuf ( Int_Xferred )
@@ -1332,7 +1395,7 @@ ENDIF
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_UnpackInitInput
+ END SUBROUTINE SD_UnPackInitInput
 
  SUBROUTINE SD_CopyInitOutput( SrcInitOutputData, DstInitOutputData, CtrlCode, ErrStat, ErrMsg )
   TYPE(SD_initoutputtype), INTENT(INOUT) :: SrcInitOutputData
@@ -1421,7 +1484,7 @@ ENDIF
   Int_Xferred   = Int_Xferred   + 1
  END SUBROUTINE SD_PackInitOutput
 
- SUBROUTINE SD_UnpackInitOutput( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackInitOutput( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -1459,7 +1522,7 @@ ENDIF
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_UnpackInitOutput
+ END SUBROUTINE SD_UnPackInitOutput
 
  SUBROUTINE SD_CopyContState( SrcContStateData, DstContStateData, CtrlCode, ErrStat, ErrMsg )
   TYPE(SD_continuousstatetype), INTENT(INOUT) :: SrcContStateData
@@ -1560,7 +1623,7 @@ ENDIF
   ENDIF
  END SUBROUTINE SD_PackContState
 
- SUBROUTINE SD_UnpackContState( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackContState( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -1616,7 +1679,7 @@ ENDIF
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_UnpackContState
+ END SUBROUTINE SD_UnPackContState
 
  SUBROUTINE SD_CopyDiscState( SrcDiscStateData, DstDiscStateData, CtrlCode, ErrStat, ErrMsg )
   TYPE(SD_discretestatetype), INTENT(INOUT) :: SrcDiscStateData
@@ -1684,7 +1747,7 @@ ENDIF
   Re_Xferred   = Re_Xferred   + 1
  END SUBROUTINE SD_PackDiscState
 
- SUBROUTINE SD_UnpackDiscState( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackDiscState( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -1722,7 +1785,7 @@ ENDIF
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_UnpackDiscState
+ END SUBROUTINE SD_UnPackDiscState
 
  SUBROUTINE SD_CopyConstrState( SrcConstrStateData, DstConstrStateData, CtrlCode, ErrStat, ErrMsg )
   TYPE(SD_constraintstatetype), INTENT(INOUT) :: SrcConstrStateData
@@ -1790,7 +1853,7 @@ ENDIF
   Re_Xferred   = Re_Xferred   + 1
  END SUBROUTINE SD_PackConstrState
 
- SUBROUTINE SD_UnpackConstrState( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackConstrState( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -1828,7 +1891,7 @@ ENDIF
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_UnpackConstrState
+ END SUBROUTINE SD_UnPackConstrState
 
  SUBROUTINE SD_CopyOtherState( SrcOtherStateData, DstOtherStateData, CtrlCode, ErrStat, ErrMsg )
   TYPE(SD_otherstatetype), INTENT(INOUT) :: SrcOtherStateData
@@ -1956,7 +2019,7 @@ ENDDO
   ENDIF
  END SUBROUTINE SD_PackOtherState
 
- SUBROUTINE SD_UnpackOtherState( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackOtherState( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -2007,7 +2070,7 @@ DO i1 = 1, SIZE(OutData%xdot,1)
     Int_xdot_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_xdot_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_xdot_Buf)
   ENDIF
-  CALL SD_UnpackContState( Re_xdot_Buf, Db_xdot_Buf, Int_xdot_Buf, OutData%xdot(i1), ErrStat, ErrMsg ) ! xdot 
+  CALL SD_UnPackContState( Re_xdot_Buf, Db_xdot_Buf, Int_xdot_Buf, OutData%xdot(i1), ErrStat, ErrMsg ) ! xdot 
 ENDDO
   OutData%n = IntKiBuf ( Int_Xferred )
   Int_Xferred   = Int_Xferred   + 1
@@ -2026,7 +2089,7 @@ ENDDO
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_UnpackOtherState
+ END SUBROUTINE SD_UnPackOtherState
 
  SUBROUTINE SD_Copyoutvar_type( Srcoutvar_typeData, Dstoutvar_typeData, CtrlCode, ErrStat, ErrMsg )
   TYPE(sd_outvar_type), INTENT(INOUT) :: Srcoutvar_typeData
@@ -2100,7 +2163,7 @@ ENDDO
   Int_Xferred   = Int_Xferred   + 1
  END SUBROUTINE SD_Packoutvar_type
 
- SUBROUTINE SD_Unpackoutvar_type( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackoutvar_type( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -2140,7 +2203,7 @@ ENDDO
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_Unpackoutvar_type
+ END SUBROUTINE SD_UnPackoutvar_type
 
  SUBROUTINE SD_CopyParam( SrcParamData, DstParamData, CtrlCode, ErrStat, ErrMsg )
   TYPE(SD_parametertype), INTENT(INOUT) :: SrcParamData
@@ -2253,35 +2316,35 @@ IF ( ALLOCATED( SrcParamData%D2_42 ) ) THEN
   IF (.NOT.ALLOCATED(DstParamData%D2_42)) ALLOCATE(DstParamData%D2_42(i1,i2))
   DstParamData%D2_42 = SrcParamData%D2_42
 ENDIF
-IF ( ALLOCATED( SrcParamData%Abar_21 ) ) THEN
-  i1 = SIZE(SrcParamData%Abar_21,1)
-  i2 = SIZE(SrcParamData%Abar_21,2)
-  IF (.NOT.ALLOCATED(DstParamData%Abar_21)) ALLOCATE(DstParamData%Abar_21(i1,i2))
-  DstParamData%Abar_21 = SrcParamData%Abar_21
+IF ( ALLOCATED( SrcParamData%Cbar_21 ) ) THEN
+  i1 = SIZE(SrcParamData%Cbar_21,1)
+  i2 = SIZE(SrcParamData%Cbar_21,2)
+  IF (.NOT.ALLOCATED(DstParamData%Cbar_21)) ALLOCATE(DstParamData%Cbar_21(i1,i2))
+  DstParamData%Cbar_21 = SrcParamData%Cbar_21
 ENDIF
-IF ( ALLOCATED( SrcParamData%Abar_22 ) ) THEN
-  i1 = SIZE(SrcParamData%Abar_22,1)
-  i2 = SIZE(SrcParamData%Abar_22,2)
-  IF (.NOT.ALLOCATED(DstParamData%Abar_22)) ALLOCATE(DstParamData%Abar_22(i1,i2))
-  DstParamData%Abar_22 = SrcParamData%Abar_22
+IF ( ALLOCATED( SrcParamData%Cbar_22 ) ) THEN
+  i1 = SIZE(SrcParamData%Cbar_22,1)
+  i2 = SIZE(SrcParamData%Cbar_22,2)
+  IF (.NOT.ALLOCATED(DstParamData%Cbar_22)) ALLOCATE(DstParamData%Cbar_22(i1,i2))
+  DstParamData%Cbar_22 = SrcParamData%Cbar_22
 ENDIF
-IF ( ALLOCATED( SrcParamData%Bbar_13 ) ) THEN
-  i1 = SIZE(SrcParamData%Bbar_13,1)
-  i2 = SIZE(SrcParamData%Bbar_13,2)
-  IF (.NOT.ALLOCATED(DstParamData%Bbar_13)) ALLOCATE(DstParamData%Bbar_13(i1,i2))
-  DstParamData%Bbar_13 = SrcParamData%Bbar_13
+IF ( ALLOCATED( SrcParamData%Dbar_13 ) ) THEN
+  i1 = SIZE(SrcParamData%Dbar_13,1)
+  i2 = SIZE(SrcParamData%Dbar_13,2)
+  IF (.NOT.ALLOCATED(DstParamData%Dbar_13)) ALLOCATE(DstParamData%Dbar_13(i1,i2))
+  DstParamData%Dbar_13 = SrcParamData%Dbar_13
 ENDIF
-IF ( ALLOCATED( SrcParamData%Bbar_23 ) ) THEN
-  i1 = SIZE(SrcParamData%Bbar_23,1)
-  i2 = SIZE(SrcParamData%Bbar_23,2)
-  IF (.NOT.ALLOCATED(DstParamData%Bbar_23)) ALLOCATE(DstParamData%Bbar_23(i1,i2))
-  DstParamData%Bbar_23 = SrcParamData%Bbar_23
+IF ( ALLOCATED( SrcParamData%Dbar_23 ) ) THEN
+  i1 = SIZE(SrcParamData%Dbar_23,1)
+  i2 = SIZE(SrcParamData%Dbar_23,2)
+  IF (.NOT.ALLOCATED(DstParamData%Dbar_23)) ALLOCATE(DstParamData%Dbar_23(i1,i2))
+  DstParamData%Dbar_23 = SrcParamData%Dbar_23
 ENDIF
-IF ( ALLOCATED( SrcParamData%Bbar_24 ) ) THEN
-  i1 = SIZE(SrcParamData%Bbar_24,1)
-  i2 = SIZE(SrcParamData%Bbar_24,2)
-  IF (.NOT.ALLOCATED(DstParamData%Bbar_24)) ALLOCATE(DstParamData%Bbar_24(i1,i2))
-  DstParamData%Bbar_24 = SrcParamData%Bbar_24
+IF ( ALLOCATED( SrcParamData%Dbar_24 ) ) THEN
+  i1 = SIZE(SrcParamData%Dbar_24,1)
+  i2 = SIZE(SrcParamData%Dbar_24,2)
+  IF (.NOT.ALLOCATED(DstParamData%Dbar_24)) ALLOCATE(DstParamData%Dbar_24(i1,i2))
+  DstParamData%Dbar_24 = SrcParamData%Dbar_24
 ENDIF
 IF ( ALLOCATED( SrcParamData%Fbar_21 ) ) THEN
   i1 = SIZE(SrcParamData%Fbar_21,1)
@@ -2436,11 +2499,11 @@ ENDDO
   IF ( ALLOCATED(ParamData%D2_21) ) DEALLOCATE(ParamData%D2_21)
   IF ( ALLOCATED(ParamData%D2_32) ) DEALLOCATE(ParamData%D2_32)
   IF ( ALLOCATED(ParamData%D2_42) ) DEALLOCATE(ParamData%D2_42)
-  IF ( ALLOCATED(ParamData%Abar_21) ) DEALLOCATE(ParamData%Abar_21)
-  IF ( ALLOCATED(ParamData%Abar_22) ) DEALLOCATE(ParamData%Abar_22)
-  IF ( ALLOCATED(ParamData%Bbar_13) ) DEALLOCATE(ParamData%Bbar_13)
-  IF ( ALLOCATED(ParamData%Bbar_23) ) DEALLOCATE(ParamData%Bbar_23)
-  IF ( ALLOCATED(ParamData%Bbar_24) ) DEALLOCATE(ParamData%Bbar_24)
+  IF ( ALLOCATED(ParamData%Cbar_21) ) DEALLOCATE(ParamData%Cbar_21)
+  IF ( ALLOCATED(ParamData%Cbar_22) ) DEALLOCATE(ParamData%Cbar_22)
+  IF ( ALLOCATED(ParamData%Dbar_13) ) DEALLOCATE(ParamData%Dbar_13)
+  IF ( ALLOCATED(ParamData%Dbar_23) ) DEALLOCATE(ParamData%Dbar_23)
+  IF ( ALLOCATED(ParamData%Dbar_24) ) DEALLOCATE(ParamData%Dbar_24)
   IF ( ALLOCATED(ParamData%Fbar_21) ) DEALLOCATE(ParamData%Fbar_21)
   IF ( ALLOCATED(ParamData%MBB) ) DEALLOCATE(ParamData%MBB)
   IF ( ALLOCATED(ParamData%KBB) ) DEALLOCATE(ParamData%KBB)
@@ -2548,11 +2611,11 @@ ENDIF
   Re_BufSz    = Re_BufSz    + SIZE( InData%D2_21 )  ! D2_21 
   Re_BufSz    = Re_BufSz    + SIZE( InData%D2_32 )  ! D2_32 
   Re_BufSz    = Re_BufSz    + SIZE( InData%D2_42 )  ! D2_42 
-  Re_BufSz    = Re_BufSz    + SIZE( InData%Abar_21 )  ! Abar_21 
-  Re_BufSz    = Re_BufSz    + SIZE( InData%Abar_22 )  ! Abar_22 
-  Re_BufSz    = Re_BufSz    + SIZE( InData%Bbar_13 )  ! Bbar_13 
-  Re_BufSz    = Re_BufSz    + SIZE( InData%Bbar_23 )  ! Bbar_23 
-  Re_BufSz    = Re_BufSz    + SIZE( InData%Bbar_24 )  ! Bbar_24 
+  Re_BufSz    = Re_BufSz    + SIZE( InData%Cbar_21 )  ! Cbar_21 
+  Re_BufSz    = Re_BufSz    + SIZE( InData%Cbar_22 )  ! Cbar_22 
+  Re_BufSz    = Re_BufSz    + SIZE( InData%Dbar_13 )  ! Dbar_13 
+  Re_BufSz    = Re_BufSz    + SIZE( InData%Dbar_23 )  ! Dbar_23 
+  Re_BufSz    = Re_BufSz    + SIZE( InData%Dbar_24 )  ! Dbar_24 
   Re_BufSz    = Re_BufSz    + SIZE( InData%Fbar_21 )  ! Fbar_21 
   Re_BufSz    = Re_BufSz    + SIZE( InData%MBB )  ! MBB 
   Re_BufSz    = Re_BufSz    + SIZE( InData%KBB )  ! KBB 
@@ -2709,25 +2772,25 @@ ENDDO
     IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%D2_42))-1 ) =  PACK(InData%D2_42 ,.TRUE.)
     Re_Xferred   = Re_Xferred   + SIZE(InData%D2_42)
   ENDIF
-  IF ( ALLOCATED(InData%Abar_21) ) THEN
-    IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%Abar_21))-1 ) =  PACK(InData%Abar_21 ,.TRUE.)
-    Re_Xferred   = Re_Xferred   + SIZE(InData%Abar_21)
+  IF ( ALLOCATED(InData%Cbar_21) ) THEN
+    IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%Cbar_21))-1 ) =  PACK(InData%Cbar_21 ,.TRUE.)
+    Re_Xferred   = Re_Xferred   + SIZE(InData%Cbar_21)
   ENDIF
-  IF ( ALLOCATED(InData%Abar_22) ) THEN
-    IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%Abar_22))-1 ) =  PACK(InData%Abar_22 ,.TRUE.)
-    Re_Xferred   = Re_Xferred   + SIZE(InData%Abar_22)
+  IF ( ALLOCATED(InData%Cbar_22) ) THEN
+    IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%Cbar_22))-1 ) =  PACK(InData%Cbar_22 ,.TRUE.)
+    Re_Xferred   = Re_Xferred   + SIZE(InData%Cbar_22)
   ENDIF
-  IF ( ALLOCATED(InData%Bbar_13) ) THEN
-    IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%Bbar_13))-1 ) =  PACK(InData%Bbar_13 ,.TRUE.)
-    Re_Xferred   = Re_Xferred   + SIZE(InData%Bbar_13)
+  IF ( ALLOCATED(InData%Dbar_13) ) THEN
+    IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%Dbar_13))-1 ) =  PACK(InData%Dbar_13 ,.TRUE.)
+    Re_Xferred   = Re_Xferred   + SIZE(InData%Dbar_13)
   ENDIF
-  IF ( ALLOCATED(InData%Bbar_23) ) THEN
-    IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%Bbar_23))-1 ) =  PACK(InData%Bbar_23 ,.TRUE.)
-    Re_Xferred   = Re_Xferred   + SIZE(InData%Bbar_23)
+  IF ( ALLOCATED(InData%Dbar_23) ) THEN
+    IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%Dbar_23))-1 ) =  PACK(InData%Dbar_23 ,.TRUE.)
+    Re_Xferred   = Re_Xferred   + SIZE(InData%Dbar_23)
   ENDIF
-  IF ( ALLOCATED(InData%Bbar_24) ) THEN
-    IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%Bbar_24))-1 ) =  PACK(InData%Bbar_24 ,.TRUE.)
-    Re_Xferred   = Re_Xferred   + SIZE(InData%Bbar_24)
+  IF ( ALLOCATED(InData%Dbar_24) ) THEN
+    IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%Dbar_24))-1 ) =  PACK(InData%Dbar_24 ,.TRUE.)
+    Re_Xferred   = Re_Xferred   + SIZE(InData%Dbar_24)
   ENDIF
   IF ( ALLOCATED(InData%Fbar_21) ) THEN
     IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(SIZE(InData%Fbar_21))-1 ) =  PACK(InData%Fbar_21 ,.TRUE.)
@@ -2929,7 +2992,7 @@ ENDDO
   Int_Xferred   = Int_Xferred   + 1
  END SUBROUTINE SD_PackParam
 
- SUBROUTINE SD_UnpackParam( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackParam( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -3079,35 +3142,35 @@ ENDDO
   DEALLOCATE(mask2)
     Re_Xferred   = Re_Xferred   + SIZE(OutData%D2_42)
   ENDIF
-  IF ( ALLOCATED(OutData%Abar_21) ) THEN
-  ALLOCATE(mask2(SIZE(OutData%Abar_21,1),SIZE(OutData%Abar_21,2))); mask2 = .TRUE.
-    OutData%Abar_21 = UNPACK(ReKiBuf( Re_Xferred:Re_Xferred+(SIZE(OutData%Abar_21))-1 ),mask2,OutData%Abar_21)
+  IF ( ALLOCATED(OutData%Cbar_21) ) THEN
+  ALLOCATE(mask2(SIZE(OutData%Cbar_21,1),SIZE(OutData%Cbar_21,2))); mask2 = .TRUE.
+    OutData%Cbar_21 = UNPACK(ReKiBuf( Re_Xferred:Re_Xferred+(SIZE(OutData%Cbar_21))-1 ),mask2,OutData%Cbar_21)
   DEALLOCATE(mask2)
-    Re_Xferred   = Re_Xferred   + SIZE(OutData%Abar_21)
+    Re_Xferred   = Re_Xferred   + SIZE(OutData%Cbar_21)
   ENDIF
-  IF ( ALLOCATED(OutData%Abar_22) ) THEN
-  ALLOCATE(mask2(SIZE(OutData%Abar_22,1),SIZE(OutData%Abar_22,2))); mask2 = .TRUE.
-    OutData%Abar_22 = UNPACK(ReKiBuf( Re_Xferred:Re_Xferred+(SIZE(OutData%Abar_22))-1 ),mask2,OutData%Abar_22)
+  IF ( ALLOCATED(OutData%Cbar_22) ) THEN
+  ALLOCATE(mask2(SIZE(OutData%Cbar_22,1),SIZE(OutData%Cbar_22,2))); mask2 = .TRUE.
+    OutData%Cbar_22 = UNPACK(ReKiBuf( Re_Xferred:Re_Xferred+(SIZE(OutData%Cbar_22))-1 ),mask2,OutData%Cbar_22)
   DEALLOCATE(mask2)
-    Re_Xferred   = Re_Xferred   + SIZE(OutData%Abar_22)
+    Re_Xferred   = Re_Xferred   + SIZE(OutData%Cbar_22)
   ENDIF
-  IF ( ALLOCATED(OutData%Bbar_13) ) THEN
-  ALLOCATE(mask2(SIZE(OutData%Bbar_13,1),SIZE(OutData%Bbar_13,2))); mask2 = .TRUE.
-    OutData%Bbar_13 = UNPACK(ReKiBuf( Re_Xferred:Re_Xferred+(SIZE(OutData%Bbar_13))-1 ),mask2,OutData%Bbar_13)
+  IF ( ALLOCATED(OutData%Dbar_13) ) THEN
+  ALLOCATE(mask2(SIZE(OutData%Dbar_13,1),SIZE(OutData%Dbar_13,2))); mask2 = .TRUE.
+    OutData%Dbar_13 = UNPACK(ReKiBuf( Re_Xferred:Re_Xferred+(SIZE(OutData%Dbar_13))-1 ),mask2,OutData%Dbar_13)
   DEALLOCATE(mask2)
-    Re_Xferred   = Re_Xferred   + SIZE(OutData%Bbar_13)
+    Re_Xferred   = Re_Xferred   + SIZE(OutData%Dbar_13)
   ENDIF
-  IF ( ALLOCATED(OutData%Bbar_23) ) THEN
-  ALLOCATE(mask2(SIZE(OutData%Bbar_23,1),SIZE(OutData%Bbar_23,2))); mask2 = .TRUE.
-    OutData%Bbar_23 = UNPACK(ReKiBuf( Re_Xferred:Re_Xferred+(SIZE(OutData%Bbar_23))-1 ),mask2,OutData%Bbar_23)
+  IF ( ALLOCATED(OutData%Dbar_23) ) THEN
+  ALLOCATE(mask2(SIZE(OutData%Dbar_23,1),SIZE(OutData%Dbar_23,2))); mask2 = .TRUE.
+    OutData%Dbar_23 = UNPACK(ReKiBuf( Re_Xferred:Re_Xferred+(SIZE(OutData%Dbar_23))-1 ),mask2,OutData%Dbar_23)
   DEALLOCATE(mask2)
-    Re_Xferred   = Re_Xferred   + SIZE(OutData%Bbar_23)
+    Re_Xferred   = Re_Xferred   + SIZE(OutData%Dbar_23)
   ENDIF
-  IF ( ALLOCATED(OutData%Bbar_24) ) THEN
-  ALLOCATE(mask2(SIZE(OutData%Bbar_24,1),SIZE(OutData%Bbar_24,2))); mask2 = .TRUE.
-    OutData%Bbar_24 = UNPACK(ReKiBuf( Re_Xferred:Re_Xferred+(SIZE(OutData%Bbar_24))-1 ),mask2,OutData%Bbar_24)
+  IF ( ALLOCATED(OutData%Dbar_24) ) THEN
+  ALLOCATE(mask2(SIZE(OutData%Dbar_24,1),SIZE(OutData%Dbar_24,2))); mask2 = .TRUE.
+    OutData%Dbar_24 = UNPACK(ReKiBuf( Re_Xferred:Re_Xferred+(SIZE(OutData%Dbar_24))-1 ),mask2,OutData%Dbar_24)
   DEALLOCATE(mask2)
-    Re_Xferred   = Re_Xferred   + SIZE(OutData%Bbar_24)
+    Re_Xferred   = Re_Xferred   + SIZE(OutData%Dbar_24)
   ENDIF
   IF ( ALLOCATED(OutData%Fbar_21) ) THEN
   ALLOCATE(mask1(SIZE(OutData%Fbar_21,1))); mask1 = .TRUE.
@@ -3252,7 +3315,7 @@ DO i1 = 1, SIZE(OutData%MoutLst,1)
     Int_MoutLst_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_MoutLst_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_MoutLst_Buf)
   ENDIF
-  CALL SD_Unpackmeshauxdatatype( Re_MoutLst_Buf, Db_MoutLst_Buf, Int_MoutLst_Buf, OutData%MoutLst(i1), ErrStat, ErrMsg ) ! MoutLst 
+  CALL SD_UnPackmeshauxdatatype( Re_MoutLst_Buf, Db_MoutLst_Buf, Int_MoutLst_Buf, OutData%MoutLst(i1), ErrStat, ErrMsg ) ! MoutLst 
 ENDDO
 DO i1 = 1, SIZE(OutData%MoutLst2,1)
  ! first call SD_Packmeshauxdatatype to get correctly sized buffers for unpacking
@@ -3269,7 +3332,7 @@ DO i1 = 1, SIZE(OutData%MoutLst2,1)
     Int_MoutLst2_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_MoutLst2_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_MoutLst2_Buf)
   ENDIF
-  CALL SD_Unpackmeshauxdatatype( Re_MoutLst2_Buf, Db_MoutLst2_Buf, Int_MoutLst2_Buf, OutData%MoutLst2(i1), ErrStat, ErrMsg ) ! MoutLst2 
+  CALL SD_UnPackmeshauxdatatype( Re_MoutLst2_Buf, Db_MoutLst2_Buf, Int_MoutLst2_Buf, OutData%MoutLst2(i1), ErrStat, ErrMsg ) ! MoutLst2 
 ENDDO
 DO i1 = 1, SIZE(OutData%MoutLst3,1)
  ! first call SD_Packmeshauxdatatype to get correctly sized buffers for unpacking
@@ -3286,7 +3349,7 @@ DO i1 = 1, SIZE(OutData%MoutLst3,1)
     Int_MoutLst3_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_MoutLst3_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_MoutLst3_Buf)
   ENDIF
-  CALL SD_Unpackmeshauxdatatype( Re_MoutLst3_Buf, Db_MoutLst3_Buf, Int_MoutLst3_Buf, OutData%MoutLst3(i1), ErrStat, ErrMsg ) ! MoutLst3 
+  CALL SD_UnPackmeshauxdatatype( Re_MoutLst3_Buf, Db_MoutLst3_Buf, Int_MoutLst3_Buf, OutData%MoutLst3(i1), ErrStat, ErrMsg ) ! MoutLst3 
 ENDDO
 DO i1 = 1, SIZE(OutData%ElemProps,1)
  ! first call SD_Packelemproptype to get correctly sized buffers for unpacking
@@ -3303,7 +3366,7 @@ DO i1 = 1, SIZE(OutData%ElemProps,1)
     Int_ElemProps_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_ElemProps_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_ElemProps_Buf)
   ENDIF
-  CALL SD_Unpackelemproptype( Re_ElemProps_Buf, Db_ElemProps_Buf, Int_ElemProps_Buf, OutData%ElemProps(i1), ErrStat, ErrMsg ) ! ElemProps 
+  CALL SD_UnPackelemproptype( Re_ElemProps_Buf, Db_ElemProps_Buf, Int_ElemProps_Buf, OutData%ElemProps(i1), ErrStat, ErrMsg ) ! ElemProps 
 ENDDO
 DO i1 = 1, SIZE(OutData%OutParam,1)
  ! first call SD_Packoutvar_type to get correctly sized buffers for unpacking
@@ -3320,7 +3383,7 @@ DO i1 = 1, SIZE(OutData%OutParam,1)
     Int_OutParam_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_OutParam_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_OutParam_Buf)
   ENDIF
-  CALL SD_Unpackoutvar_type( Re_OutParam_Buf, Db_OutParam_Buf, Int_OutParam_Buf, OutData%OutParam(i1), ErrStat, ErrMsg ) ! OutParam 
+  CALL SD_UnPackoutvar_type( Re_OutParam_Buf, Db_OutParam_Buf, Int_OutParam_Buf, OutData%OutParam(i1), ErrStat, ErrMsg ) ! OutParam 
 ENDDO
   OutData%OutAllInt = IntKiBuf ( Int_Xferred )
   Int_Xferred   = Int_Xferred   + 1
@@ -3333,7 +3396,7 @@ ENDDO
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_UnpackParam
+ END SUBROUTINE SD_UnPackParam
 
  SUBROUTINE SD_CopyInput( SrcInputData, DstInputData, CtrlCode, ErrStat, ErrMsg )
   TYPE(SD_inputtype), INTENT(INOUT) :: SrcInputData
@@ -3454,7 +3517,7 @@ ENDDO
   IF( ALLOCATED(Int_LMesh_Buf) ) DEALLOCATE(Int_LMesh_Buf)
  END SUBROUTINE SD_PackInput
 
- SUBROUTINE SD_UnpackInput( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackInput( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -3531,7 +3594,7 @@ ENDDO
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_UnpackInput
+ END SUBROUTINE SD_UnPackInput
 
  SUBROUTINE SD_CopyOutput( SrcOutputData, DstOutputData, CtrlCode, ErrStat, ErrMsg )
   TYPE(SD_outputtype), INTENT(INOUT) :: SrcOutputData
@@ -3663,7 +3726,7 @@ ENDIF
   ENDIF
  END SUBROUTINE SD_PackOutput
 
- SUBROUTINE SD_UnpackOutput( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackOutput( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -3746,7 +3809,7 @@ ENDIF
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_UnpackOutput
+ END SUBROUTINE SD_UnPackOutput
 
  SUBROUTINE SD_CopydYdu( SrcdYduData, DstdYduData, CtrlCode, ErrStat, ErrMsg )
   TYPE(SD_partialoutputpinputtype), INTENT(INOUT) :: SrcdYduData
@@ -3838,7 +3901,7 @@ ENDIF
   IF( ALLOCATED(Int_DummyOutput_Buf) ) DEALLOCATE(Int_DummyOutput_Buf)
  END SUBROUTINE SD_PackdYdu
 
- SUBROUTINE SD_UnpackdYdu( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackdYdu( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -3888,11 +3951,11 @@ ENDIF
     Int_DummyOutput_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_DummyOutput_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_DummyOutput_Buf)
   ENDIF
-  CALL SD_UnpackInput( Re_DummyOutput_Buf, Db_DummyOutput_Buf, Int_DummyOutput_Buf, OutData%DummyOutput, ErrStat, ErrMsg ) ! DummyOutput 
+  CALL SD_UnPackInput( Re_DummyOutput_Buf, Db_DummyOutput_Buf, Int_DummyOutput_Buf, OutData%DummyOutput, ErrStat, ErrMsg ) ! DummyOutput 
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_UnpackdYdu
+ END SUBROUTINE SD_UnPackdYdu
 
  SUBROUTINE SD_CopydXdu( SrcdXduData, DstdXduData, CtrlCode, ErrStat, ErrMsg )
   TYPE(SD_partialcontstatepinputtype), INTENT(INOUT) :: SrcdXduData
@@ -3984,7 +4047,7 @@ ENDIF
   IF( ALLOCATED(Int_DummyContState_Buf) ) DEALLOCATE(Int_DummyContState_Buf)
  END SUBROUTINE SD_PackdXdu
 
- SUBROUTINE SD_UnpackdXdu( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackdXdu( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -4034,11 +4097,11 @@ ENDIF
     Int_DummyContState_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_DummyContState_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_DummyContState_Buf)
   ENDIF
-  CALL SD_UnpackInput( Re_DummyContState_Buf, Db_DummyContState_Buf, Int_DummyContState_Buf, OutData%DummyContState, ErrStat, ErrMsg ) ! DummyContState 
+  CALL SD_UnPackInput( Re_DummyContState_Buf, Db_DummyContState_Buf, Int_DummyContState_Buf, OutData%DummyContState, ErrStat, ErrMsg ) ! DummyContState 
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_UnpackdXdu
+ END SUBROUTINE SD_UnPackdXdu
 
  SUBROUTINE SD_CopydXddu( SrcdXdduData, DstdXdduData, CtrlCode, ErrStat, ErrMsg )
   TYPE(SD_partialdiscstatepinputtype), INTENT(INOUT) :: SrcdXdduData
@@ -4130,7 +4193,7 @@ ENDIF
   IF( ALLOCATED(Int_DummyDiscState_Buf) ) DEALLOCATE(Int_DummyDiscState_Buf)
  END SUBROUTINE SD_PackdXddu
 
- SUBROUTINE SD_UnpackdXddu( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackdXddu( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -4180,11 +4243,11 @@ ENDIF
     Int_DummyDiscState_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_DummyDiscState_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_DummyDiscState_Buf)
   ENDIF
-  CALL SD_UnpackInput( Re_DummyDiscState_Buf, Db_DummyDiscState_Buf, Int_DummyDiscState_Buf, OutData%DummyDiscState, ErrStat, ErrMsg ) ! DummyDiscState 
+  CALL SD_UnPackInput( Re_DummyDiscState_Buf, Db_DummyDiscState_Buf, Int_DummyDiscState_Buf, OutData%DummyDiscState, ErrStat, ErrMsg ) ! DummyDiscState 
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_UnpackdXddu
+ END SUBROUTINE SD_UnPackdXddu
 
  SUBROUTINE SD_CopydZdu( SrcdZduData, DstdZduData, CtrlCode, ErrStat, ErrMsg )
   TYPE(SD_partialconstrstatepinputtype), INTENT(INOUT) :: SrcdZduData
@@ -4276,7 +4339,7 @@ ENDIF
   IF( ALLOCATED(Int_DummyConstrState_Buf) ) DEALLOCATE(Int_DummyConstrState_Buf)
  END SUBROUTINE SD_PackdZdu
 
- SUBROUTINE SD_UnpackdZdu( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackdZdu( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -4326,11 +4389,11 @@ ENDIF
     Int_DummyConstrState_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_DummyConstrState_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_DummyConstrState_Buf)
   ENDIF
-  CALL SD_UnpackInput( Re_DummyConstrState_Buf, Db_DummyConstrState_Buf, Int_DummyConstrState_Buf, OutData%DummyConstrState, ErrStat, ErrMsg ) ! DummyConstrState 
+  CALL SD_UnPackInput( Re_DummyConstrState_Buf, Db_DummyConstrState_Buf, Int_DummyConstrState_Buf, OutData%DummyConstrState, ErrStat, ErrMsg ) ! DummyConstrState 
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_UnpackdZdu
+ END SUBROUTINE SD_UnPackdZdu
 
  SUBROUTINE SD_Copypartialoutputpcontstatetype( SrcpartialoutputpcontstatetypeData, DstpartialoutputpcontstatetypeData, CtrlCode, ErrStat, ErrMsg )
   TYPE(sd_partialoutputpcontstatetype), INTENT(INOUT) :: SrcpartialoutputpcontstatetypeData
@@ -4422,7 +4485,7 @@ ENDIF
   IF( ALLOCATED(Int_DummyOutput_Buf) ) DEALLOCATE(Int_DummyOutput_Buf)
  END SUBROUTINE SD_Packpartialoutputpcontstatetype
 
- SUBROUTINE SD_Unpackpartialoutputpcontstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackpartialoutputpcontstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -4472,11 +4535,11 @@ ENDIF
     Int_DummyOutput_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_DummyOutput_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_DummyOutput_Buf)
   ENDIF
-  CALL SD_UnpackContState( Re_DummyOutput_Buf, Db_DummyOutput_Buf, Int_DummyOutput_Buf, OutData%DummyOutput, ErrStat, ErrMsg ) ! DummyOutput 
+  CALL SD_UnPackContState( Re_DummyOutput_Buf, Db_DummyOutput_Buf, Int_DummyOutput_Buf, OutData%DummyOutput, ErrStat, ErrMsg ) ! DummyOutput 
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_Unpackpartialoutputpcontstatetype
+ END SUBROUTINE SD_UnPackpartialoutputpcontstatetype
 
  SUBROUTINE SD_Copypartialcontstatepcontstatetype( SrcpartialcontstatepcontstatetypeData, DstpartialcontstatepcontstatetypeData, CtrlCode, ErrStat, ErrMsg )
   TYPE(sd_partialcontstatepcontstatetype), INTENT(INOUT) :: SrcpartialcontstatepcontstatetypeData
@@ -4568,7 +4631,7 @@ ENDIF
   IF( ALLOCATED(Int_DummyContState_Buf) ) DEALLOCATE(Int_DummyContState_Buf)
  END SUBROUTINE SD_Packpartialcontstatepcontstatetype
 
- SUBROUTINE SD_Unpackpartialcontstatepcontstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackpartialcontstatepcontstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -4618,11 +4681,11 @@ ENDIF
     Int_DummyContState_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_DummyContState_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_DummyContState_Buf)
   ENDIF
-  CALL SD_UnpackContState( Re_DummyContState_Buf, Db_DummyContState_Buf, Int_DummyContState_Buf, OutData%DummyContState, ErrStat, ErrMsg ) ! DummyContState 
+  CALL SD_UnPackContState( Re_DummyContState_Buf, Db_DummyContState_Buf, Int_DummyContState_Buf, OutData%DummyContState, ErrStat, ErrMsg ) ! DummyContState 
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_Unpackpartialcontstatepcontstatetype
+ END SUBROUTINE SD_UnPackpartialcontstatepcontstatetype
 
  SUBROUTINE SD_Copypartialdiscstatepcontstatetype( SrcpartialdiscstatepcontstatetypeData, DstpartialdiscstatepcontstatetypeData, CtrlCode, ErrStat, ErrMsg )
   TYPE(sd_partialdiscstatepcontstatetype), INTENT(INOUT) :: SrcpartialdiscstatepcontstatetypeData
@@ -4714,7 +4777,7 @@ ENDIF
   IF( ALLOCATED(Int_DummyDiscState_Buf) ) DEALLOCATE(Int_DummyDiscState_Buf)
  END SUBROUTINE SD_Packpartialdiscstatepcontstatetype
 
- SUBROUTINE SD_Unpackpartialdiscstatepcontstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackpartialdiscstatepcontstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -4764,11 +4827,11 @@ ENDIF
     Int_DummyDiscState_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_DummyDiscState_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_DummyDiscState_Buf)
   ENDIF
-  CALL SD_UnpackContState( Re_DummyDiscState_Buf, Db_DummyDiscState_Buf, Int_DummyDiscState_Buf, OutData%DummyDiscState, ErrStat, ErrMsg ) ! DummyDiscState 
+  CALL SD_UnPackContState( Re_DummyDiscState_Buf, Db_DummyDiscState_Buf, Int_DummyDiscState_Buf, OutData%DummyDiscState, ErrStat, ErrMsg ) ! DummyDiscState 
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_Unpackpartialdiscstatepcontstatetype
+ END SUBROUTINE SD_UnPackpartialdiscstatepcontstatetype
 
  SUBROUTINE SD_Copypartialconstrstatepcontstatetype( SrcpartialconstrstatepcontstatetypeData, DstpartialconstrstatepcontstatetypeData, CtrlCode, ErrStat, ErrMsg )
   TYPE(sd_partialconstrstatepcontstatetype), INTENT(INOUT) :: SrcpartialconstrstatepcontstatetypeData
@@ -4860,7 +4923,7 @@ ENDIF
   IF( ALLOCATED(Int_DummyConstrState_Buf) ) DEALLOCATE(Int_DummyConstrState_Buf)
  END SUBROUTINE SD_Packpartialconstrstatepcontstatetype
 
- SUBROUTINE SD_Unpackpartialconstrstatepcontstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackpartialconstrstatepcontstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -4910,11 +4973,11 @@ ENDIF
     Int_DummyConstrState_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_DummyConstrState_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_DummyConstrState_Buf)
   ENDIF
-  CALL SD_UnpackContState( Re_DummyConstrState_Buf, Db_DummyConstrState_Buf, Int_DummyConstrState_Buf, OutData%DummyConstrState, ErrStat, ErrMsg ) ! DummyConstrState 
+  CALL SD_UnPackContState( Re_DummyConstrState_Buf, Db_DummyConstrState_Buf, Int_DummyConstrState_Buf, OutData%DummyConstrState, ErrStat, ErrMsg ) ! DummyConstrState 
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_Unpackpartialconstrstatepcontstatetype
+ END SUBROUTINE SD_UnPackpartialconstrstatepcontstatetype
 
  SUBROUTINE SD_Copypartialoutputpdiscstatetype( SrcpartialoutputpdiscstatetypeData, DstpartialoutputpdiscstatetypeData, CtrlCode, ErrStat, ErrMsg )
   TYPE(sd_partialoutputpdiscstatetype), INTENT(INOUT) :: SrcpartialoutputpdiscstatetypeData
@@ -5006,7 +5069,7 @@ ENDIF
   IF( ALLOCATED(Int_DummyOutput_Buf) ) DEALLOCATE(Int_DummyOutput_Buf)
  END SUBROUTINE SD_Packpartialoutputpdiscstatetype
 
- SUBROUTINE SD_Unpackpartialoutputpdiscstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackpartialoutputpdiscstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -5056,11 +5119,11 @@ ENDIF
     Int_DummyOutput_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_DummyOutput_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_DummyOutput_Buf)
   ENDIF
-  CALL SD_UnpackDiscState( Re_DummyOutput_Buf, Db_DummyOutput_Buf, Int_DummyOutput_Buf, OutData%DummyOutput, ErrStat, ErrMsg ) ! DummyOutput 
+  CALL SD_UnPackDiscState( Re_DummyOutput_Buf, Db_DummyOutput_Buf, Int_DummyOutput_Buf, OutData%DummyOutput, ErrStat, ErrMsg ) ! DummyOutput 
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_Unpackpartialoutputpdiscstatetype
+ END SUBROUTINE SD_UnPackpartialoutputpdiscstatetype
 
  SUBROUTINE SD_Copypartialcontstatepdiscstatetype( SrcpartialcontstatepdiscstatetypeData, DstpartialcontstatepdiscstatetypeData, CtrlCode, ErrStat, ErrMsg )
   TYPE(sd_partialcontstatepdiscstatetype), INTENT(INOUT) :: SrcpartialcontstatepdiscstatetypeData
@@ -5152,7 +5215,7 @@ ENDIF
   IF( ALLOCATED(Int_DummyContState_Buf) ) DEALLOCATE(Int_DummyContState_Buf)
  END SUBROUTINE SD_Packpartialcontstatepdiscstatetype
 
- SUBROUTINE SD_Unpackpartialcontstatepdiscstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackpartialcontstatepdiscstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -5202,11 +5265,11 @@ ENDIF
     Int_DummyContState_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_DummyContState_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_DummyContState_Buf)
   ENDIF
-  CALL SD_UnpackDiscState( Re_DummyContState_Buf, Db_DummyContState_Buf, Int_DummyContState_Buf, OutData%DummyContState, ErrStat, ErrMsg ) ! DummyContState 
+  CALL SD_UnPackDiscState( Re_DummyContState_Buf, Db_DummyContState_Buf, Int_DummyContState_Buf, OutData%DummyContState, ErrStat, ErrMsg ) ! DummyContState 
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_Unpackpartialcontstatepdiscstatetype
+ END SUBROUTINE SD_UnPackpartialcontstatepdiscstatetype
 
  SUBROUTINE SD_Copypartialdiscstatepdiscstatetype( SrcpartialdiscstatepdiscstatetypeData, DstpartialdiscstatepdiscstatetypeData, CtrlCode, ErrStat, ErrMsg )
   TYPE(sd_partialdiscstatepdiscstatetype), INTENT(INOUT) :: SrcpartialdiscstatepdiscstatetypeData
@@ -5298,7 +5361,7 @@ ENDIF
   IF( ALLOCATED(Int_DummyDiscState_Buf) ) DEALLOCATE(Int_DummyDiscState_Buf)
  END SUBROUTINE SD_Packpartialdiscstatepdiscstatetype
 
- SUBROUTINE SD_Unpackpartialdiscstatepdiscstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackpartialdiscstatepdiscstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -5348,11 +5411,11 @@ ENDIF
     Int_DummyDiscState_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_DummyDiscState_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_DummyDiscState_Buf)
   ENDIF
-  CALL SD_UnpackDiscState( Re_DummyDiscState_Buf, Db_DummyDiscState_Buf, Int_DummyDiscState_Buf, OutData%DummyDiscState, ErrStat, ErrMsg ) ! DummyDiscState 
+  CALL SD_UnPackDiscState( Re_DummyDiscState_Buf, Db_DummyDiscState_Buf, Int_DummyDiscState_Buf, OutData%DummyDiscState, ErrStat, ErrMsg ) ! DummyDiscState 
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_Unpackpartialdiscstatepdiscstatetype
+ END SUBROUTINE SD_UnPackpartialdiscstatepdiscstatetype
 
  SUBROUTINE SD_Copypartialconstrstatepdiscstatetype( SrcpartialconstrstatepdiscstatetypeData, DstpartialconstrstatepdiscstatetypeData, CtrlCode, ErrStat, ErrMsg )
   TYPE(sd_partialconstrstatepdiscstatetype), INTENT(INOUT) :: SrcpartialconstrstatepdiscstatetypeData
@@ -5444,7 +5507,7 @@ ENDIF
   IF( ALLOCATED(Int_DummyConstrState_Buf) ) DEALLOCATE(Int_DummyConstrState_Buf)
  END SUBROUTINE SD_Packpartialconstrstatepdiscstatetype
 
- SUBROUTINE SD_Unpackpartialconstrstatepdiscstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackpartialconstrstatepdiscstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -5494,11 +5557,11 @@ ENDIF
     Int_DummyConstrState_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_DummyConstrState_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_DummyConstrState_Buf)
   ENDIF
-  CALL SD_UnpackDiscState( Re_DummyConstrState_Buf, Db_DummyConstrState_Buf, Int_DummyConstrState_Buf, OutData%DummyConstrState, ErrStat, ErrMsg ) ! DummyConstrState 
+  CALL SD_UnPackDiscState( Re_DummyConstrState_Buf, Db_DummyConstrState_Buf, Int_DummyConstrState_Buf, OutData%DummyConstrState, ErrStat, ErrMsg ) ! DummyConstrState 
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_Unpackpartialconstrstatepdiscstatetype
+ END SUBROUTINE SD_UnPackpartialconstrstatepdiscstatetype
 
  SUBROUTINE SD_Copypartialoutputpconstrstatetype( SrcpartialoutputpconstrstatetypeData, DstpartialoutputpconstrstatetypeData, CtrlCode, ErrStat, ErrMsg )
   TYPE(sd_partialoutputpconstrstatetype), INTENT(INOUT) :: SrcpartialoutputpconstrstatetypeData
@@ -5590,7 +5653,7 @@ ENDIF
   IF( ALLOCATED(Int_DummyOutput_Buf) ) DEALLOCATE(Int_DummyOutput_Buf)
  END SUBROUTINE SD_Packpartialoutputpconstrstatetype
 
- SUBROUTINE SD_Unpackpartialoutputpconstrstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackpartialoutputpconstrstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -5640,11 +5703,11 @@ ENDIF
     Int_DummyOutput_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_DummyOutput_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_DummyOutput_Buf)
   ENDIF
-  CALL SD_UnpackConstrState( Re_DummyOutput_Buf, Db_DummyOutput_Buf, Int_DummyOutput_Buf, OutData%DummyOutput, ErrStat, ErrMsg ) ! DummyOutput 
+  CALL SD_UnPackConstrState( Re_DummyOutput_Buf, Db_DummyOutput_Buf, Int_DummyOutput_Buf, OutData%DummyOutput, ErrStat, ErrMsg ) ! DummyOutput 
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_Unpackpartialoutputpconstrstatetype
+ END SUBROUTINE SD_UnPackpartialoutputpconstrstatetype
 
  SUBROUTINE SD_Copypartialcontstatepconstrstatetype( SrcpartialcontstatepconstrstatetypeData, DstpartialcontstatepconstrstatetypeData, CtrlCode, ErrStat, ErrMsg )
   TYPE(sd_partialcontstatepconstrstatetype), INTENT(INOUT) :: SrcpartialcontstatepconstrstatetypeData
@@ -5736,7 +5799,7 @@ ENDIF
   IF( ALLOCATED(Int_DummyContState_Buf) ) DEALLOCATE(Int_DummyContState_Buf)
  END SUBROUTINE SD_Packpartialcontstatepconstrstatetype
 
- SUBROUTINE SD_Unpackpartialcontstatepconstrstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackpartialcontstatepconstrstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -5786,11 +5849,11 @@ ENDIF
     Int_DummyContState_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_DummyContState_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_DummyContState_Buf)
   ENDIF
-  CALL SD_UnpackConstrState( Re_DummyContState_Buf, Db_DummyContState_Buf, Int_DummyContState_Buf, OutData%DummyContState, ErrStat, ErrMsg ) ! DummyContState 
+  CALL SD_UnPackConstrState( Re_DummyContState_Buf, Db_DummyContState_Buf, Int_DummyContState_Buf, OutData%DummyContState, ErrStat, ErrMsg ) ! DummyContState 
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_Unpackpartialcontstatepconstrstatetype
+ END SUBROUTINE SD_UnPackpartialcontstatepconstrstatetype
 
  SUBROUTINE SD_Copypartialdiscstatepconstrstatetype( SrcpartialdiscstatepconstrstatetypeData, DstpartialdiscstatepconstrstatetypeData, CtrlCode, ErrStat, ErrMsg )
   TYPE(sd_partialdiscstatepconstrstatetype), INTENT(INOUT) :: SrcpartialdiscstatepconstrstatetypeData
@@ -5882,7 +5945,7 @@ ENDIF
   IF( ALLOCATED(Int_DummyDiscState_Buf) ) DEALLOCATE(Int_DummyDiscState_Buf)
  END SUBROUTINE SD_Packpartialdiscstatepconstrstatetype
 
- SUBROUTINE SD_Unpackpartialdiscstatepconstrstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackpartialdiscstatepconstrstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -5932,11 +5995,11 @@ ENDIF
     Int_DummyDiscState_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_DummyDiscState_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_DummyDiscState_Buf)
   ENDIF
-  CALL SD_UnpackConstrState( Re_DummyDiscState_Buf, Db_DummyDiscState_Buf, Int_DummyDiscState_Buf, OutData%DummyDiscState, ErrStat, ErrMsg ) ! DummyDiscState 
+  CALL SD_UnPackConstrState( Re_DummyDiscState_Buf, Db_DummyDiscState_Buf, Int_DummyDiscState_Buf, OutData%DummyDiscState, ErrStat, ErrMsg ) ! DummyDiscState 
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_Unpackpartialdiscstatepconstrstatetype
+ END SUBROUTINE SD_UnPackpartialdiscstatepconstrstatetype
 
  SUBROUTINE SD_Copypartialconstrstatepconstrstatetype( SrcpartialconstrstatepconstrstatetypeData, DstpartialconstrstatepconstrstatetypeData, CtrlCode, ErrStat, ErrMsg )
   TYPE(sd_partialconstrstatepconstrstatetype), INTENT(INOUT) :: SrcpartialconstrstatepconstrstatetypeData
@@ -6028,7 +6091,7 @@ ENDIF
   IF( ALLOCATED(Int_DummyConstrState_Buf) ) DEALLOCATE(Int_DummyConstrState_Buf)
  END SUBROUTINE SD_Packpartialconstrstatepconstrstatetype
 
- SUBROUTINE SD_Unpackpartialconstrstatepconstrstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
+ SUBROUTINE SD_UnPackpartialconstrstatepconstrstatetype( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
   REAL(ReKi),      ALLOCATABLE, INTENT(IN   ) :: ReKiBuf(:)
   REAL(DbKi),      ALLOCATABLE, INTENT(IN   ) :: DbKiBuf(:)
   INTEGER(IntKi),  ALLOCATABLE, INTENT(IN   ) :: IntKiBuf(:)
@@ -6078,11 +6141,11 @@ ENDIF
     Int_DummyConstrState_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_DummyConstrState_Buf)-1 )
     Int_Xferred = Int_Xferred + SIZE(Int_DummyConstrState_Buf)
   ENDIF
-  CALL SD_UnpackConstrState( Re_DummyConstrState_Buf, Db_DummyConstrState_Buf, Int_DummyConstrState_Buf, OutData%DummyConstrState, ErrStat, ErrMsg ) ! DummyConstrState 
+  CALL SD_UnPackConstrState( Re_DummyConstrState_Buf, Db_DummyConstrState_Buf, Int_DummyConstrState_Buf, OutData%DummyConstrState, ErrStat, ErrMsg ) ! DummyConstrState 
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_Unpackpartialconstrstatepconstrstatetype
+ END SUBROUTINE SD_UnPackpartialconstrstatepconstrstatetype
 
  SUBROUTINE SD_Pack( Re_RetAry, Db_RetAry, Int_RetAry, &
                      InData, ParamData, ContStateData, DiscStateData, &
@@ -6403,7 +6466,7 @@ ENDIF
   Int_Xferred  = Int_Xferred - 1
  END SUBROUTINE SD_Pack
 
- SUBROUTINE SD_Unpack( Re_RetAry, Db_RetAry, Int_RetAry, &
+ SUBROUTINE SD_UnPack( Re_RetAry, Db_RetAry, Int_RetAry, &
                      InData, ParamData, ContStateData, DiscStateData, &
                      ConstrStateData, OtherStateData, OutData, ErrStat, ErrMsg )
   TYPE(SD_InputType),           INTENT(INOUT) :: InData
@@ -6438,7 +6501,7 @@ ENDIF
   Re_Xferred  = 1
   Db_Xferred  = 1
   Int_Xferred  = 1
-    ! Unpack Input
+    ! UnPack Input
   IF ( ALLOCATED( Re_Ary ) )  DEALLOCATE(Re_Ary)
   IF ( ALLOCATED( Db_Ary ) )  DEALLOCATE(Db_Ary)
   IF ( ALLOCATED( Int_Ary ) )  DEALLOCATE(Int_Ary)
@@ -6455,11 +6518,11 @@ ENDIF
     Int_Ary = Int_RetAry(Int_Xferred:Int_Xferred+SIZE(Int_Ary)-1)
     Int_Xferred = Int_Xferred + SIZE( Int_Ary )
   ENDIF
-  CALL SD_UnpackInput(Re_Ary,Db_Ary,Int_Ary,InData,ErrStat2,ErrMsg2)
+  CALL SD_UnPackInput(Re_Ary,Db_Ary,Int_Ary,InData,ErrStat2,ErrMsg2)
   IF ( ALLOCATED( Re_Ary ) )  DEALLOCATE(Re_Ary)
   IF ( ALLOCATED( Db_Ary ) )  DEALLOCATE(Db_Ary)
   IF ( ALLOCATED( Int_Ary ) )  DEALLOCATE(Int_Ary)
-    ! Unpack Param
+    ! UnPack Param
   IF ( ALLOCATED( Re_Ary ) )  DEALLOCATE(Re_Ary)
   IF ( ALLOCATED( Db_Ary ) )  DEALLOCATE(Db_Ary)
   IF ( ALLOCATED( Int_Ary ) )  DEALLOCATE(Int_Ary)
@@ -6476,11 +6539,11 @@ ENDIF
     Int_Ary = Int_RetAry(Int_Xferred:Int_Xferred+SIZE(Int_Ary)-1)
     Int_Xferred = Int_Xferred + SIZE( Int_Ary )
   ENDIF
-  CALL SD_UnpackParam(Re_Ary,Db_Ary,Int_Ary,ParamData,ErrStat2,ErrMsg2)
+  CALL SD_UnPackParam(Re_Ary,Db_Ary,Int_Ary,ParamData,ErrStat2,ErrMsg2)
   IF ( ALLOCATED( Re_Ary ) )  DEALLOCATE(Re_Ary)
   IF ( ALLOCATED( Db_Ary ) )  DEALLOCATE(Db_Ary)
   IF ( ALLOCATED( Int_Ary ) )  DEALLOCATE(Int_Ary)
-    ! Unpack ContState
+    ! UnPack ContState
   IF ( ALLOCATED( Re_Ary ) )  DEALLOCATE(Re_Ary)
   IF ( ALLOCATED( Db_Ary ) )  DEALLOCATE(Db_Ary)
   IF ( ALLOCATED( Int_Ary ) )  DEALLOCATE(Int_Ary)
@@ -6497,11 +6560,11 @@ ENDIF
     Int_Ary = Int_RetAry(Int_Xferred:Int_Xferred+SIZE(Int_Ary)-1)
     Int_Xferred = Int_Xferred + SIZE( Int_Ary )
   ENDIF
-  CALL SD_UnpackContState(Re_Ary,Db_Ary,Int_Ary,ContStateData,ErrStat2,ErrMsg2)
+  CALL SD_UnPackContState(Re_Ary,Db_Ary,Int_Ary,ContStateData,ErrStat2,ErrMsg2)
   IF ( ALLOCATED( Re_Ary ) )  DEALLOCATE(Re_Ary)
   IF ( ALLOCATED( Db_Ary ) )  DEALLOCATE(Db_Ary)
   IF ( ALLOCATED( Int_Ary ) )  DEALLOCATE(Int_Ary)
-    ! Unpack DiscState
+    ! UnPack DiscState
   IF ( ALLOCATED( Re_Ary ) )  DEALLOCATE(Re_Ary)
   IF ( ALLOCATED( Db_Ary ) )  DEALLOCATE(Db_Ary)
   IF ( ALLOCATED( Int_Ary ) )  DEALLOCATE(Int_Ary)
@@ -6518,11 +6581,11 @@ ENDIF
     Int_Ary = Int_RetAry(Int_Xferred:Int_Xferred+SIZE(Int_Ary)-1)
     Int_Xferred = Int_Xferred + SIZE( Int_Ary )
   ENDIF
-  CALL SD_UnpackDiscState(Re_Ary,Db_Ary,Int_Ary,DiscStateData,ErrStat2,ErrMsg2)
+  CALL SD_UnPackDiscState(Re_Ary,Db_Ary,Int_Ary,DiscStateData,ErrStat2,ErrMsg2)
   IF ( ALLOCATED( Re_Ary ) )  DEALLOCATE(Re_Ary)
   IF ( ALLOCATED( Db_Ary ) )  DEALLOCATE(Db_Ary)
   IF ( ALLOCATED( Int_Ary ) )  DEALLOCATE(Int_Ary)
-    ! Unpack ConstrState
+    ! UnPack ConstrState
   IF ( ALLOCATED( Re_Ary ) )  DEALLOCATE(Re_Ary)
   IF ( ALLOCATED( Db_Ary ) )  DEALLOCATE(Db_Ary)
   IF ( ALLOCATED( Int_Ary ) )  DEALLOCATE(Int_Ary)
@@ -6539,11 +6602,11 @@ ENDIF
     Int_Ary = Int_RetAry(Int_Xferred:Int_Xferred+SIZE(Int_Ary)-1)
     Int_Xferred = Int_Xferred + SIZE( Int_Ary )
   ENDIF
-  CALL SD_UnpackConstrState(Re_Ary,Db_Ary,Int_Ary,ConstrStateData,ErrStat2,ErrMsg2)
+  CALL SD_UnPackConstrState(Re_Ary,Db_Ary,Int_Ary,ConstrStateData,ErrStat2,ErrMsg2)
   IF ( ALLOCATED( Re_Ary ) )  DEALLOCATE(Re_Ary)
   IF ( ALLOCATED( Db_Ary ) )  DEALLOCATE(Db_Ary)
   IF ( ALLOCATED( Int_Ary ) )  DEALLOCATE(Int_Ary)
-    ! Unpack OtherState
+    ! UnPack OtherState
   IF ( ALLOCATED( Re_Ary ) )  DEALLOCATE(Re_Ary)
   IF ( ALLOCATED( Db_Ary ) )  DEALLOCATE(Db_Ary)
   IF ( ALLOCATED( Int_Ary ) )  DEALLOCATE(Int_Ary)
@@ -6560,11 +6623,11 @@ ENDIF
     Int_Ary = Int_RetAry(Int_Xferred:Int_Xferred+SIZE(Int_Ary)-1)
     Int_Xferred = Int_Xferred + SIZE( Int_Ary )
   ENDIF
-  CALL SD_UnpackOtherState(Re_Ary,Db_Ary,Int_Ary,OtherStateData,ErrStat2,ErrMsg2)
+  CALL SD_UnPackOtherState(Re_Ary,Db_Ary,Int_Ary,OtherStateData,ErrStat2,ErrMsg2)
   IF ( ALLOCATED( Re_Ary ) )  DEALLOCATE(Re_Ary)
   IF ( ALLOCATED( Db_Ary ) )  DEALLOCATE(Db_Ary)
   IF ( ALLOCATED( Int_Ary ) )  DEALLOCATE(Int_Ary)
-    ! Unpack Output
+    ! UnPack Output
   IF ( ALLOCATED( Re_Ary ) )  DEALLOCATE(Re_Ary)
   IF ( ALLOCATED( Db_Ary ) )  DEALLOCATE(Db_Ary)
   IF ( ALLOCATED( Int_Ary ) )  DEALLOCATE(Int_Ary)
@@ -6581,14 +6644,14 @@ ENDIF
     Int_Ary = Int_RetAry(Int_Xferred:Int_Xferred+SIZE(Int_Ary)-1)
     Int_Xferred = Int_Xferred + SIZE( Int_Ary )
   ENDIF
-  CALL SD_UnpackOutput(Re_Ary,Db_Ary,Int_Ary,OutData,ErrStat2,ErrMsg2)
+  CALL SD_UnPackOutput(Re_Ary,Db_Ary,Int_Ary,OutData,ErrStat2,ErrMsg2)
   IF ( ALLOCATED( Re_Ary ) )  DEALLOCATE(Re_Ary)
   IF ( ALLOCATED( Db_Ary ) )  DEALLOCATE(Db_Ary)
   IF ( ALLOCATED( Int_Ary ) )  DEALLOCATE(Int_Ary)
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
- END SUBROUTINE SD_Unpack
+ END SUBROUTINE SD_UnPack
 
 
  SUBROUTINE SD_Input_ExtrapInterp(u, tin, u_out, tin_out, ErrStat, ErrMsg )
@@ -6609,7 +6672,7 @@ ENDIF
 
  TYPE(SD_inputtype), INTENT(INOUT)  :: u(:)      ! Inputs at t1 > t2 > t3
  REAL(DbKi),         INTENT(IN   )  :: tin(:)      ! Times associated with the inputs
- TYPE(SD_inputtype), INTENT(INOUT)  :: u_out     ! Inputs at t1 > t2 > t3
+ TYPE(SD_inputtype), INTENT(INOUT)  :: u_out     ! Inputs at tin_out
  REAL(DbKi),         INTENT(IN   )  :: tin_out     ! time to be extrap/interp'd to
  INTEGER(IntKi),     INTENT(  OUT)  :: ErrStat   ! Error status of the operation
  CHARACTER(*),       INTENT(  OUT)  :: ErrMsg    ! Error message if ErrStat /= ErrID_None
@@ -6618,31 +6681,16 @@ ENDIF
  REAL(DbKi) :: t_out           ! Time to which to be extrap/interpd
  TYPE(MeshType) :: tmpmesh
  INTEGER(IntKi)                 :: order    ! order of polynomial fit (max 2)
- REAL(ReKi),ALLOCATABLE,DIMENSION(:)        :: mr1       ! temporary for extrapolaton/interpolation
- REAL(ReKi),ALLOCATABLE,DIMENSION(:)        :: mr2       ! temporary for extrapolation/interpolation
- REAL(ReKi),ALLOCATABLE,DIMENSION(:)        :: mr3       ! temporary for extrapolation/interpolation
- REAL(DbKi),ALLOCATABLE,DIMENSION(:)        :: md1       ! temporary for extrapolaton/interpolation
- REAL(DbKi),ALLOCATABLE,DIMENSION(:)        :: md2       ! temporary for extrapolation/interpolation
- REAL(DbKi),ALLOCATABLE,DIMENSION(:)        :: md3       ! temporary for extrapolation/interpolation
- INTEGER(IntKi),ALLOCATABLE,DIMENSION(:)    :: mi1       ! temporary for extrapolaton/interpolation
- INTEGER(IntKi),ALLOCATABLE,DIMENSION(:)    :: mi2       ! temporary for extrapolation/interpolation
- INTEGER(IntKi),ALLOCATABLE,DIMENSION(:)    :: mi3       ! temporary for extrapolation/interpolation
- REAL(DbKi)                                 :: a0       ! temporary for extrapolaton/interpolation
  REAL(DbKi)                                 :: b0       ! temporary for extrapolation/interpolation
  REAL(DbKi)                                 :: c0       ! temporary for extrapolation/interpolation
- REAL(DbKi),ALLOCATABLE,DIMENSION(:)        :: a1       ! temporary for extrapolaton/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:)        :: b1       ! temporary for extrapolation/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:)        :: c1       ! temporary for extrapolation/interpolation
- REAL(DbKi),ALLOCATABLE,DIMENSION(:,:)      :: a2       ! temporary for extrapolaton/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:,:)      :: b2       ! temporary for extrapolation/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:,:)      :: c2       ! temporary for extrapolation/interpolation
- REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:)    :: a3       ! temporary for extrapolaton/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:)    :: b3       ! temporary for extrapolation/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:)    :: c3       ! temporary for extrapolation/interpolation
- REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:,:)  :: a4       ! temporary for extrapolaton/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:,:)  :: b4       ! temporary for extrapolation/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:,:)  :: c4       ! temporary for extrapolation/interpolation
- REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:,:,:):: a5       ! temporary for extrapolaton/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:,:,:):: b5       ! temporary for extrapolation/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:,:,:):: c5       ! temporary for extrapolation/interpolation
  INTEGER                                    :: i01    ! dim1 level 0 counter variable for arrays of ddts
@@ -6696,11 +6744,10 @@ ENDIF
  INTEGER                                    :: i85    ! dim5 level 8 counter variable for arrays of ddts
  INTEGER                                    :: i95    ! dim5 level 9 counter variable for arrays of ddts
     ! Initialize ErrStat
-    ! Initialize ErrStat
  ErrStat = ErrID_None
  ErrMsg  = ""
-    ! we're going to subtract a constant from the times
-    ! to check if this resolves some numerical issues later (when t gets large)
+    ! we'll subtract a constant from the times to resolve some 
+    ! numerical issues when t gets large (and to simplify the equations)
  t = tin - tin(1)
  t_out = tin_out - tin(1)
 
@@ -6724,46 +6771,8 @@ ENDIF
     ErrMsg  = ' Error in SD_Input_ExtrapInterp: t(1) must not equal t(2) to avoid a division-by-zero error.'
     RETURN
   END IF
-  CALL MeshPack(u(1)%TPMesh, mr1, md1, mi1, ErrStat, ErrMsg )
-  CALL MeshPack(u(2)%TPMesh, mr2, md2, mi2, ErrStat, ErrMsg )
-  ALLOCATE(a1(SIZE(mr1)))
-  ALLOCATE(b1(SIZE(mr1)))
-  a1 = -((t(2)*mr1 - t(1)*mr2)/(t(1) - t(2)))
-  b1 = -((-mr1 + mr2)/(t(1) - t(2)))
-  mr1 = a1 + b1 * t_out
-  DEALLOCATE(a1)
-  DEALLOCATE(b1)
-  ALLOCATE(a1(SIZE(md1)))
-  ALLOCATE(b1(SIZE(md1)))
-  a1 = -((t(2)*md1 - t(1)*md2)/(t(1) - t(2)))
-  b1 = -((-md1 + md2)/(t(1) - t(2)))
-  md1 = a1 + b1 * t_out
-  DEALLOCATE(a1)
-  DEALLOCATE(b1)
-  CALL MeshUnPack(tmpmesh, mr1, md1, mi1, ErrStat, ErrMsg )
-  CALL MeshCopy(tmpmesh, u_out%TPMesh, MESH_UPDATECOPY, ErrStat, ErrMsg )
-  CALL MeshDestroy(tmpmesh, ErrStat, ErrMsg )
-  DEALLOCATE(mr1,md1,mi1,mr2,md2,mi2)
-  CALL MeshPack(u(1)%LMesh, mr1, md1, mi1, ErrStat, ErrMsg )
-  CALL MeshPack(u(2)%LMesh, mr2, md2, mi2, ErrStat, ErrMsg )
-  ALLOCATE(a1(SIZE(mr1)))
-  ALLOCATE(b1(SIZE(mr1)))
-  a1 = -((t(2)*mr1 - t(1)*mr2)/(t(1) - t(2)))
-  b1 = -((-mr1 + mr2)/(t(1) - t(2)))
-  mr1 = a1 + b1 * t_out
-  DEALLOCATE(a1)
-  DEALLOCATE(b1)
-  ALLOCATE(a1(SIZE(md1)))
-  ALLOCATE(b1(SIZE(md1)))
-  a1 = -((t(2)*md1 - t(1)*md2)/(t(1) - t(2)))
-  b1 = -((-md1 + md2)/(t(1) - t(2)))
-  md1 = a1 + b1 * t_out
-  DEALLOCATE(a1)
-  DEALLOCATE(b1)
-  CALL MeshUnPack(tmpmesh, mr1, md1, mi1, ErrStat, ErrMsg )
-  CALL MeshCopy(tmpmesh, u_out%LMesh, MESH_UPDATECOPY, ErrStat, ErrMsg )
-  CALL MeshDestroy(tmpmesh, ErrStat, ErrMsg )
-  DEALLOCATE(mr1,md1,mi1,mr2,md2,mi2)
+  CALL MeshExtrapInterp1(u(1)%TPMesh, u(2)%TPMesh, tin, u_out%TPMesh, tin_out, ErrStat, ErrMsg )
+  CALL MeshExtrapInterp1(u(1)%LMesh, u(2)%LMesh, tin, u_out%LMesh, tin_out, ErrStat, ErrMsg )
  ELSE IF ( order .eq. 2 ) THEN
   IF ( EqualRealNos( t(1), t(2) ) ) THEN
     ErrStat = ErrID_Fatal
@@ -6780,92 +6789,8 @@ ENDIF
     ErrMsg  = ' Error in SD_Input_ExtrapInterp: t(1) must not equal t(3) to avoid a division-by-zero error.'
     RETURN
   END IF
-  CALL MeshPack(u(1)%TPMesh, mr1, md1, mi1, ErrStat, ErrMsg )
-  CALL MeshPack(u(2)%TPMesh, mr2, md2, mi2, ErrStat, ErrMsg )
-  CALL MeshPack(u(3)%TPMesh, mr3, md3, mi3, ErrStat, ErrMsg )
-  ALLOCATE(a1(SIZE(mr1)))
-  ALLOCATE(b1(SIZE(mr1)))
-  ALLOCATE(c1(SIZE(mr1)))
-  a1 = (t(1)*t(3)*(-t(1) + t(3))*mr2 &
-      + t(2)**2*(t(3)*mr1 - t(1)*mr3)        &
-      + t(2)*(-(t(3)**2*mr1) + t(1)**2*mr3 ))                        &
-      / ((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  b1 = (t(3)**2*(mr1  - mr2) &
-      + t(1)**2*(mr2 - mr3 ) + t(2)**2*(-mr1  &
-      + mr3 ))/((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  c1 = (t(3)*(-mr1 + mr2 ) &
-      + t(2)*(mr1 - mr3 ) &
-      + t(1)*(-mr2 + mr3 ))  &
-      /((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  mr1 = a1 + b1 * t_out + c1 * t_out**2
-  DEALLOCATE(a1)
-  DEALLOCATE(b1)
-  DEALLOCATE(c1)
-  ALLOCATE(a1(SIZE(md1)))
-  ALLOCATE(b1(SIZE(md1)))
-  ALLOCATE(c1(SIZE(md1)))
-  a1 = (t(1)*t(3)*(-t(1) + t(3))*md2 &
-      + t(2)**2*(t(3)*md1 - t(1)*md3)        &
-      + t(2)*(-(t(3)**2*md1) + t(1)**2*md3 ))                        &
-      / ((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  b1 = (t(3)**2*(md1  - md2) &
-      + t(1)**2*(md2 - md3 ) + t(2)**2*(-md1  &
-      + md3 ))/((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))                  
-  c1 = (t(3)*(-md1 + md2 ) &
-      + t(2)*(md1 - md3 ) &
-      + t(1)*(-md2 + md3 ))  &
-      /((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  md1 = a1 + b1 * t_out + c1 * t_out**2
-  DEALLOCATE(a1)
-  DEALLOCATE(b1)
-  DEALLOCATE(c1)
-  CALL MeshUnPack(tmpmesh, mr1, md1, mi1, ErrStat, ErrMsg )
-  CALL MeshCopy(tmpmesh, u_out%TPMesh, MESH_UPDATECOPY, ErrStat, ErrMsg )
-  CALL MeshDestroy(tmpmesh, ErrStat, ErrMsg )
-  DEALLOCATE(mr1,md1,mi1,mr2,md2,mi2,mr3,md3,mi3)
-  CALL MeshPack(u(1)%LMesh, mr1, md1, mi1, ErrStat, ErrMsg )
-  CALL MeshPack(u(2)%LMesh, mr2, md2, mi2, ErrStat, ErrMsg )
-  CALL MeshPack(u(3)%LMesh, mr3, md3, mi3, ErrStat, ErrMsg )
-  ALLOCATE(a1(SIZE(mr1)))
-  ALLOCATE(b1(SIZE(mr1)))
-  ALLOCATE(c1(SIZE(mr1)))
-  a1 = (t(1)*t(3)*(-t(1) + t(3))*mr2 &
-      + t(2)**2*(t(3)*mr1 - t(1)*mr3)        &
-      + t(2)*(-(t(3)**2*mr1) + t(1)**2*mr3 ))                        &
-      / ((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  b1 = (t(3)**2*(mr1  - mr2) &
-      + t(1)**2*(mr2 - mr3 ) + t(2)**2*(-mr1  &
-      + mr3 ))/((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  c1 = (t(3)*(-mr1 + mr2 ) &
-      + t(2)*(mr1 - mr3 ) &
-      + t(1)*(-mr2 + mr3 ))  &
-      /((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  mr1 = a1 + b1 * t_out + c1 * t_out**2
-  DEALLOCATE(a1)
-  DEALLOCATE(b1)
-  DEALLOCATE(c1)
-  ALLOCATE(a1(SIZE(md1)))
-  ALLOCATE(b1(SIZE(md1)))
-  ALLOCATE(c1(SIZE(md1)))
-  a1 = (t(1)*t(3)*(-t(1) + t(3))*md2 &
-      + t(2)**2*(t(3)*md1 - t(1)*md3)        &
-      + t(2)*(-(t(3)**2*md1) + t(1)**2*md3 ))                        &
-      / ((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  b1 = (t(3)**2*(md1  - md2) &
-      + t(1)**2*(md2 - md3 ) + t(2)**2*(-md1  &
-      + md3 ))/((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))                  
-  c1 = (t(3)*(-md1 + md2 ) &
-      + t(2)*(md1 - md3 ) &
-      + t(1)*(-md2 + md3 ))  &
-      /((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  md1 = a1 + b1 * t_out + c1 * t_out**2
-  DEALLOCATE(a1)
-  DEALLOCATE(b1)
-  DEALLOCATE(c1)
-  CALL MeshUnPack(tmpmesh, mr1, md1, mi1, ErrStat, ErrMsg )
-  CALL MeshCopy(tmpmesh, u_out%LMesh, MESH_UPDATECOPY, ErrStat, ErrMsg )
-  CALL MeshDestroy(tmpmesh, ErrStat, ErrMsg )
-  DEALLOCATE(mr1,md1,mi1,mr2,md2,mi2,mr3,md3,mi3)
+  CALL MeshExtrapInterp2(u(1)%TPMesh, u(2)%TPMesh, u(3)%TPMesh, tin, u_out%TPMesh, tin_out, ErrStat, ErrMsg )
+  CALL MeshExtrapInterp2(u(1)%LMesh, u(2)%LMesh, u(3)%LMesh, tin, u_out%LMesh, tin_out, ErrStat, ErrMsg )
  ELSE 
    ErrStat = ErrID_Fatal
    ErrMsg = ' order must be less than 3 in SD_Input_ExtrapInterp '
@@ -6892,7 +6817,7 @@ ENDIF
 
  TYPE(SD_outputtype), INTENT(INOUT)  :: u(:)      ! Inputs at t1 > t2 > t3
  REAL(DbKi),         INTENT(IN   )  :: tin(:)      ! Times associated with the inputs
- TYPE(SD_outputtype), INTENT(INOUT)  :: u_out     ! Inputs at t1 > t2 > t3
+ TYPE(SD_outputtype), INTENT(INOUT)  :: u_out     ! Inputs at tin_out
  REAL(DbKi),         INTENT(IN   )  :: tin_out     ! time to be extrap/interp'd to
  INTEGER(IntKi),     INTENT(  OUT)  :: ErrStat   ! Error status of the operation
  CHARACTER(*),       INTENT(  OUT)  :: ErrMsg    ! Error message if ErrStat /= ErrID_None
@@ -6901,31 +6826,16 @@ ENDIF
  REAL(DbKi) :: t_out           ! Time to which to be extrap/interpd
  TYPE(MeshType) :: tmpmesh
  INTEGER(IntKi)                 :: order    ! order of polynomial fit (max 2)
- REAL(ReKi),ALLOCATABLE,DIMENSION(:)        :: mr1       ! temporary for extrapolaton/interpolation
- REAL(ReKi),ALLOCATABLE,DIMENSION(:)        :: mr2       ! temporary for extrapolation/interpolation
- REAL(ReKi),ALLOCATABLE,DIMENSION(:)        :: mr3       ! temporary for extrapolation/interpolation
- REAL(DbKi),ALLOCATABLE,DIMENSION(:)        :: md1       ! temporary for extrapolaton/interpolation
- REAL(DbKi),ALLOCATABLE,DIMENSION(:)        :: md2       ! temporary for extrapolation/interpolation
- REAL(DbKi),ALLOCATABLE,DIMENSION(:)        :: md3       ! temporary for extrapolation/interpolation
- INTEGER(IntKi),ALLOCATABLE,DIMENSION(:)    :: mi1       ! temporary for extrapolaton/interpolation
- INTEGER(IntKi),ALLOCATABLE,DIMENSION(:)    :: mi2       ! temporary for extrapolation/interpolation
- INTEGER(IntKi),ALLOCATABLE,DIMENSION(:)    :: mi3       ! temporary for extrapolation/interpolation
- REAL(DbKi)                                 :: a0       ! temporary for extrapolaton/interpolation
  REAL(DbKi)                                 :: b0       ! temporary for extrapolation/interpolation
  REAL(DbKi)                                 :: c0       ! temporary for extrapolation/interpolation
- REAL(DbKi),ALLOCATABLE,DIMENSION(:)        :: a1       ! temporary for extrapolaton/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:)        :: b1       ! temporary for extrapolation/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:)        :: c1       ! temporary for extrapolation/interpolation
- REAL(DbKi),ALLOCATABLE,DIMENSION(:,:)      :: a2       ! temporary for extrapolaton/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:,:)      :: b2       ! temporary for extrapolation/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:,:)      :: c2       ! temporary for extrapolation/interpolation
- REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:)    :: a3       ! temporary for extrapolaton/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:)    :: b3       ! temporary for extrapolation/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:)    :: c3       ! temporary for extrapolation/interpolation
- REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:,:)  :: a4       ! temporary for extrapolaton/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:,:)  :: b4       ! temporary for extrapolation/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:,:)  :: c4       ! temporary for extrapolation/interpolation
- REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:,:,:):: a5       ! temporary for extrapolaton/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:,:,:):: b5       ! temporary for extrapolation/interpolation
  REAL(DbKi),ALLOCATABLE,DIMENSION(:,:,:,:,:):: c5       ! temporary for extrapolation/interpolation
  INTEGER                                    :: i01    ! dim1 level 0 counter variable for arrays of ddts
@@ -6979,11 +6889,10 @@ ENDIF
  INTEGER                                    :: i85    ! dim5 level 8 counter variable for arrays of ddts
  INTEGER                                    :: i95    ! dim5 level 9 counter variable for arrays of ddts
     ! Initialize ErrStat
-    ! Initialize ErrStat
  ErrStat = ErrID_None
  ErrMsg  = ""
-    ! we're going to subtract a constant from the times
-    ! to check if this resolves some numerical issues later (when t gets large)
+    ! we'll subtract a constant from the times to resolve some 
+    ! numerical issues when t gets large (and to simplify the equations)
  t = tin - tin(1)
  t_out = tin_out - tin(1)
 
@@ -7008,53 +6917,12 @@ ENDIF
     ErrMsg  = ' Error in SD_Output_ExtrapInterp: t(1) must not equal t(2) to avoid a division-by-zero error.'
     RETURN
   END IF
-  CALL MeshPack(u(1)%Y1Mesh, mr1, md1, mi1, ErrStat, ErrMsg )
-  CALL MeshPack(u(2)%Y1Mesh, mr2, md2, mi2, ErrStat, ErrMsg )
-  ALLOCATE(a1(SIZE(mr1)))
-  ALLOCATE(b1(SIZE(mr1)))
-  a1 = -((t(2)*mr1 - t(1)*mr2)/(t(1) - t(2)))
-  b1 = -((-mr1 + mr2)/(t(1) - t(2)))
-  mr1 = a1 + b1 * t_out
-  DEALLOCATE(a1)
-  DEALLOCATE(b1)
-  ALLOCATE(a1(SIZE(md1)))
-  ALLOCATE(b1(SIZE(md1)))
-  a1 = -((t(2)*md1 - t(1)*md2)/(t(1) - t(2)))
-  b1 = -((-md1 + md2)/(t(1) - t(2)))
-  md1 = a1 + b1 * t_out
-  DEALLOCATE(a1)
-  DEALLOCATE(b1)
-  CALL MeshUnPack(tmpmesh, mr1, md1, mi1, ErrStat, ErrMsg )
-  CALL MeshCopy(tmpmesh, u_out%Y1Mesh, MESH_UPDATECOPY, ErrStat, ErrMsg )
-  CALL MeshDestroy(tmpmesh, ErrStat, ErrMsg )
-  DEALLOCATE(mr1,md1,mi1,mr2,md2,mi2)
-  CALL MeshPack(u(1)%Y2Mesh, mr1, md1, mi1, ErrStat, ErrMsg )
-  CALL MeshPack(u(2)%Y2Mesh, mr2, md2, mi2, ErrStat, ErrMsg )
-  ALLOCATE(a1(SIZE(mr1)))
-  ALLOCATE(b1(SIZE(mr1)))
-  a1 = -((t(2)*mr1 - t(1)*mr2)/(t(1) - t(2)))
-  b1 = -((-mr1 + mr2)/(t(1) - t(2)))
-  mr1 = a1 + b1 * t_out
-  DEALLOCATE(a1)
-  DEALLOCATE(b1)
-  ALLOCATE(a1(SIZE(md1)))
-  ALLOCATE(b1(SIZE(md1)))
-  a1 = -((t(2)*md1 - t(1)*md2)/(t(1) - t(2)))
-  b1 = -((-md1 + md2)/(t(1) - t(2)))
-  md1 = a1 + b1 * t_out
-  DEALLOCATE(a1)
-  DEALLOCATE(b1)
-  CALL MeshUnPack(tmpmesh, mr1, md1, mi1, ErrStat, ErrMsg )
-  CALL MeshCopy(tmpmesh, u_out%Y2Mesh, MESH_UPDATECOPY, ErrStat, ErrMsg )
-  CALL MeshDestroy(tmpmesh, ErrStat, ErrMsg )
-  DEALLOCATE(mr1,md1,mi1,mr2,md2,mi2)
-  ALLOCATE(a1(SIZE(u_out%WriteOutput,1)))
+  CALL MeshExtrapInterp1(u(1)%Y1Mesh, u(2)%Y1Mesh, tin, u_out%Y1Mesh, tin_out, ErrStat, ErrMsg )
+  CALL MeshExtrapInterp1(u(1)%Y2Mesh, u(2)%Y2Mesh, tin, u_out%Y2Mesh, tin_out, ErrStat, ErrMsg )
   ALLOCATE(b1(SIZE(u_out%WriteOutput,1)))
   ALLOCATE(c1(SIZE(u_out%WriteOutput,1)))
-  a1 = -((t(2)*u(1)%WriteOutput - t(1)*u(2)%WriteOutput)/(t(1) - t(2)))
-  b1 = -((-u(1)%WriteOutput + u(2)%WriteOutput)/(t(1) - t(2)))
-  u_out%WriteOutput = a1 + b1 * t_out
-  DEALLOCATE(a1)
+  b1 = -(u(1)%WriteOutput - u(2)%WriteOutput)/t(2)
+  u_out%WriteOutput = u(1)%WriteOutput + b1 * t_out
   DEALLOCATE(b1)
   DEALLOCATE(c1)
  ELSE IF ( order .eq. 2 ) THEN
@@ -7073,108 +6941,13 @@ ENDIF
     ErrMsg  = ' Error in SD_Output_ExtrapInterp: t(1) must not equal t(3) to avoid a division-by-zero error.'
     RETURN
   END IF
-  CALL MeshPack(u(1)%Y1Mesh, mr1, md1, mi1, ErrStat, ErrMsg )
-  CALL MeshPack(u(2)%Y1Mesh, mr2, md2, mi2, ErrStat, ErrMsg )
-  CALL MeshPack(u(3)%Y1Mesh, mr3, md3, mi3, ErrStat, ErrMsg )
-  ALLOCATE(a1(SIZE(mr1)))
-  ALLOCATE(b1(SIZE(mr1)))
-  ALLOCATE(c1(SIZE(mr1)))
-  a1 = (t(1)*t(3)*(-t(1) + t(3))*mr2 &
-      + t(2)**2*(t(3)*mr1 - t(1)*mr3)        &
-      + t(2)*(-(t(3)**2*mr1) + t(1)**2*mr3 ))                        &
-      / ((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  b1 = (t(3)**2*(mr1  - mr2) &
-      + t(1)**2*(mr2 - mr3 ) + t(2)**2*(-mr1  &
-      + mr3 ))/((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  c1 = (t(3)*(-mr1 + mr2 ) &
-      + t(2)*(mr1 - mr3 ) &
-      + t(1)*(-mr2 + mr3 ))  &
-      /((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  mr1 = a1 + b1 * t_out + c1 * t_out**2
-  DEALLOCATE(a1)
-  DEALLOCATE(b1)
-  DEALLOCATE(c1)
-  ALLOCATE(a1(SIZE(md1)))
-  ALLOCATE(b1(SIZE(md1)))
-  ALLOCATE(c1(SIZE(md1)))
-  a1 = (t(1)*t(3)*(-t(1) + t(3))*md2 &
-      + t(2)**2*(t(3)*md1 - t(1)*md3)        &
-      + t(2)*(-(t(3)**2*md1) + t(1)**2*md3 ))                        &
-      / ((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  b1 = (t(3)**2*(md1  - md2) &
-      + t(1)**2*(md2 - md3 ) + t(2)**2*(-md1  &
-      + md3 ))/((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))                  
-  c1 = (t(3)*(-md1 + md2 ) &
-      + t(2)*(md1 - md3 ) &
-      + t(1)*(-md2 + md3 ))  &
-      /((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  md1 = a1 + b1 * t_out + c1 * t_out**2
-  DEALLOCATE(a1)
-  DEALLOCATE(b1)
-  DEALLOCATE(c1)
-  CALL MeshUnPack(tmpmesh, mr1, md1, mi1, ErrStat, ErrMsg )
-  CALL MeshCopy(tmpmesh, u_out%Y1Mesh, MESH_UPDATECOPY, ErrStat, ErrMsg )
-  CALL MeshDestroy(tmpmesh, ErrStat, ErrMsg )
-  DEALLOCATE(mr1,md1,mi1,mr2,md2,mi2,mr3,md3,mi3)
-  CALL MeshPack(u(1)%Y2Mesh, mr1, md1, mi1, ErrStat, ErrMsg )
-  CALL MeshPack(u(2)%Y2Mesh, mr2, md2, mi2, ErrStat, ErrMsg )
-  CALL MeshPack(u(3)%Y2Mesh, mr3, md3, mi3, ErrStat, ErrMsg )
-  ALLOCATE(a1(SIZE(mr1)))
-  ALLOCATE(b1(SIZE(mr1)))
-  ALLOCATE(c1(SIZE(mr1)))
-  a1 = (t(1)*t(3)*(-t(1) + t(3))*mr2 &
-      + t(2)**2*(t(3)*mr1 - t(1)*mr3)        &
-      + t(2)*(-(t(3)**2*mr1) + t(1)**2*mr3 ))                        &
-      / ((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  b1 = (t(3)**2*(mr1  - mr2) &
-      + t(1)**2*(mr2 - mr3 ) + t(2)**2*(-mr1  &
-      + mr3 ))/((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  c1 = (t(3)*(-mr1 + mr2 ) &
-      + t(2)*(mr1 - mr3 ) &
-      + t(1)*(-mr2 + mr3 ))  &
-      /((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  mr1 = a1 + b1 * t_out + c1 * t_out**2
-  DEALLOCATE(a1)
-  DEALLOCATE(b1)
-  DEALLOCATE(c1)
-  ALLOCATE(a1(SIZE(md1)))
-  ALLOCATE(b1(SIZE(md1)))
-  ALLOCATE(c1(SIZE(md1)))
-  a1 = (t(1)*t(3)*(-t(1) + t(3))*md2 &
-      + t(2)**2*(t(3)*md1 - t(1)*md3)        &
-      + t(2)*(-(t(3)**2*md1) + t(1)**2*md3 ))                        &
-      / ((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  b1 = (t(3)**2*(md1  - md2) &
-      + t(1)**2*(md2 - md3 ) + t(2)**2*(-md1  &
-      + md3 ))/((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))                  
-  c1 = (t(3)*(-md1 + md2 ) &
-      + t(2)*(md1 - md3 ) &
-      + t(1)*(-md2 + md3 ))  &
-      /((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  md1 = a1 + b1 * t_out + c1 * t_out**2
-  DEALLOCATE(a1)
-  DEALLOCATE(b1)
-  DEALLOCATE(c1)
-  CALL MeshUnPack(tmpmesh, mr1, md1, mi1, ErrStat, ErrMsg )
-  CALL MeshCopy(tmpmesh, u_out%Y2Mesh, MESH_UPDATECOPY, ErrStat, ErrMsg )
-  CALL MeshDestroy(tmpmesh, ErrStat, ErrMsg )
-  DEALLOCATE(mr1,md1,mi1,mr2,md2,mi2,mr3,md3,mi3)
-  ALLOCATE(a1(SIZE(u_out%WriteOutput,1)))
+  CALL MeshExtrapInterp2(u(1)%Y1Mesh, u(2)%Y1Mesh, u(3)%Y1Mesh, tin, u_out%Y1Mesh, tin_out, ErrStat, ErrMsg )
+  CALL MeshExtrapInterp2(u(1)%Y2Mesh, u(2)%Y2Mesh, u(3)%Y2Mesh, tin, u_out%Y2Mesh, tin_out, ErrStat, ErrMsg )
   ALLOCATE(b1(SIZE(u_out%WriteOutput,1)))
   ALLOCATE(c1(SIZE(u_out%WriteOutput,1)))
-  a1 = (t(1)*t(3)*(-t(1) + t(3))*u(2)%WriteOutput &
-      + t(2)**2*(t(3)*u(1)%WriteOutput - t(1)*u(3)%WriteOutput)        &
-      + t(2)*(-(t(3)**2*u(1)%WriteOutput) + t(1)**2*u(3)%WriteOutput))                        &
-      / ((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  b1 = (t(3)**2*(u(1)%WriteOutput - u(2)%WriteOutput) &
-      + t(1)**2*(u(2)%WriteOutput - u(3)%WriteOutput) + t(2)**2*(-u(1)%WriteOutput &
-      + u(3)%WriteOutput))/((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))                  
-  c1 = (t(3)*(-u(1)%WriteOutput + u(2)%WriteOutput) &
-      + t(2)*(u(1)%WriteOutput - u(3)%WriteOutput) &
-      + t(1)*(-u(2)%WriteOutput + u(3)%WriteOutput))  &
-      /((t(1) - t(2))*(t(1) - t(3))*(t(2) - t(3)))
-  u_out%WriteOutput = a1 + b1 * t_out + c1 * t_out**2
-  DEALLOCATE(a1)
+  b1 = (t(3)**2*(u(1)%WriteOutput - u(2)%WriteOutput) + t(2)**2*(-u(1)%WriteOutput + u(3)%WriteOutput))/(t(2)*t(3)*(t(2) - t(3)))
+  c1 = ( (t(2)-t(3))*u(1)%WriteOutput + t(3)*u(2)%WriteOutput - t(2)*u(3)%WriteOutput ) / (t(2)*t(3)*(t(2) - t(3)))
+  u_out%WriteOutput = u(1)%WriteOutput + b1 * t_out + c1 * t_out**2
   DEALLOCATE(b1)
   DEALLOCATE(c1)
  ELSE 
