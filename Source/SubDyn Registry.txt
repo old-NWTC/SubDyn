@@ -42,7 +42,8 @@ typedef	  ^                           ^	ReKi	       DirCos	          {3}{3}	    
 #	 integer													
 typedef	SubDyn/SD	InitInputType	CHARACTER(1024)	SDInputFile	-	-	-	Name of the input file						
 typedef	^	^	ReKi	        g	        -	-	-	Gravity acceleration	
-typedef	^	^	ReKi	        TP_RefPoint 	{3} 	-	-	Gravity acceleration					
+typedef	^	^	ReKi	        TP_RefPoint 	{3} 	-	-	Gravity acceleration
+typedef	^	^	ReKi          SubRotateZ  - - - Rotation angle in degrees about global Z    					
 typedef	^	^	CHARACTER(1024)	SubDynSum	-	-	-	SubDyn summary and elem files						
 typedef	^	^	CHARACTER(1024)	RootName	-	-	-	SubDyn rootname	
 typedef	^	^       ReKi		DT	        -	-	-	Time step from Glue Code	seconds					
@@ -153,11 +154,11 @@ typedef	 ^	                 ^               ReKi	    	D2_11         {:}{:}	-	-	C
 typedef	 ^	                 ^               ReKi	    	D2_21         {:}{:}	-	-	Coefficient of u in Y2
 typedef	 ^	                 ^               ReKi	    	D2_32         {:}{:}	-	-	Coefficient of u in Y2
 typedef	 ^	                 ^               ReKi	    	D2_42         {:}{:}	-	-	Coefficient of u in Y2
-typedef	 ^	                 ^               ReKi	    	Abar_21         {:}{:}	-	-	Coefficient of x in URdotdot ULdotdot
-typedef	 ^	                 ^               ReKi	    	Abar_22         {:}{:}	-	-	Coefficient of x in URdotdot ULdotdot
-typedef	 ^	                 ^               ReKi	    	Bbar_13         {:}{:}	-	-	Coefficient of u in URdotdot ULdotdot
-typedef	 ^	                 ^               ReKi	    	Bbar_23         {:}{:}	-	-	Coefficient of u in URdotdot ULdotdot
-typedef	 ^	                 ^               ReKi	    	Bbar_24         {:}{:}	-	-	Coefficient of u in URdotdot ULdotdot
+typedef	 ^	                 ^               ReKi	    	Cbar_21         {:}{:}	-	-	Coefficient of x in URdotdot ULdotdot
+typedef	 ^	                 ^               ReKi	    	Cbar_22         {:}{:}	-	-	Coefficient of x in URdotdot ULdotdot
+typedef	 ^	                 ^               ReKi	    	Dbar_13         {:}{:}	-	-	Coefficient of u in URdotdot ULdotdot
+typedef	 ^	                 ^               ReKi	    	Dbar_23         {:}{:}	-	-	Coefficient of u in URdotdot ULdotdot
+typedef	 ^	                 ^               ReKi	    	Dbar_24         {:}{:}	-	-	Coefficient of u in URdotdot ULdotdot
 typedef	 ^	                 ^               ReKi	    	Fbar_21         {:}	-	-	Load Component in URdotdot ULdotdot
 typedef	 ^	                 ^               ReKi	    	MBB         {:}{:}	-	-	Matrix after C-B reduction
 typedef	 ^	                 ^               ReKi	    	KBB         {:}{:}	-	-	Matrix after C-B reduction
