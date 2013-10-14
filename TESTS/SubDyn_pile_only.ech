@@ -1,0 +1,87 @@
+--------------------------------------------------------------------------------                                                                                                                        
+-------------- SubDyn MultiMember Support Structure Input File -----------------                                                                                                                        
+Example of Jacket Structure Input File. Pile Only for OC3 Monopile configuration.                                                                                                                       
+-------------------------- SIMULATION CONTROL  ---------------------------------                                                                                                                        
+            T  Echo           - Echo Input File Logic Variable
+   0.0000E+00  SDdeltaT       - Subdyn Time Step
+            1  IntMethod      - Integration Method
+-------------------- FEA and CRAIG-BAMPTON PARAMETERS---------------------------                                                                                                                        
+            3  FEMMod         - FEM analysis mode
+            3  NDiv           - Number of divisions per member
+            F  CBMod          - C-B mod flag
+15	      Nmodes     - Number of internal modes to retain (ignored if CMMod=Flase). If Nmodes=0 --> Guyan Reduction. If Nmodes>0, list Nmodes structural damping ratios for each retained mode (% of crit
+   5.1000E+01  JDampings      - Damping ratio
+---- STRUCTURE JOINTS: joints connect structure members (~Hydrodyn Input File)---                                                                                                                       
+            2  NJoints        - Number of joints
+JointID          JointXss                 JointYss               JointZss	-Coordinates of Member joints in SS-Coordinate System                                                                         
+(-)                 (m)                     (m)                     (m)                                                                                                                                 
+               Joints         - Joint number and coordinates
+   1.0000E+00   0.0000E+00   0.0000E+00  -2.0000E+01
+               Joints         - Joint number and coordinates
+   2.0000E+00   0.0000E+00   0.0000E+00   1.0000E+01
+------------------- BASE REACTION JOINTS: T/F for Locked/Free DOF @ each Reaction Node ---------------------                                                                                            
+            1  NReact         - Number of joints with reaction forces
+JointID	 RctTDxss     RctTDYss    RctTDZss   RctRDXss   RctRDYss   RctRDZss	   - Global Coordinate System                                                                                               
+               Reacts         - Joint number and dof
+            1            1            1            1            1            1            1
+------- INTERFACE JOINTS: T/F for Locked (to the TP)/Free DOF @each Interface Joint (only Locked-to-TP implemented thus far (=rigid TP)) ---------                                                      
+            1  NInterf        - Number of joints fixed to TP
+JointID	ItfTDxss     ItfTDYss    ItfTDZss   ItfRDXss   ItfRDYss   ItfRDZss   - Global Coordinate System                                                                                                 
+               Interf         - Interface joint number and dof
+            2            1            1            1            1            1            1
+----------------------------------- MEMBERS --------------------------------------                                                                                                                      
+            1  NMembers       - Number of members
+MemberID   MJointID1   MJointID2   MPropSetID1   MPropSetID2     COSMID                                                                                                                                 
+               Members        - Member number and connectivity 
+            1            1            2            1            1
+------------------ MEMBER X-SECTION PROPERTY data 1/2 [isotropic material for now: use this table if circular-tubular elements ------------------------                                                 
+            4  NPropSets      - Number of property sets
+            YoungE       ShearG       MatDens     XsecD      XsecT                                                                                                                                      
+PropSetID   [N/m2]       [N/m2]       [kg/m3]     [m]        [m]                                                                                                                                        
+               PropSets       - PropSets number and values 
+   1.0000E+00   2.1000E+11   8.0769E+10   8.5020E+03   6.0000E+00   6.0000E-02
+               PropSets       - PropSets number and values 
+   2.0000E+00   2.1000E+11   8.0769E+10   8.5020E+03   6.0000E+00   2.7000E-02
+               PropSets       - PropSets number and values 
+   3.0000E+00   2.1000E+11   8.0769E+10   8.5020E+03   3.8700E+00   1.9000E-02
+               PropSets       - PropSets number and values 
+   4.0000E+00   2.1000E+14   8.0769E+14   1.0000E+00   1.0000E+00   1.0000E-02
+------------------ MEMBER X-SECTION PROPERTY data 2/2 [isotropic material for now: use this table if any section other than circular, however provide COSM(i,j) below) ------------------------         
+            0  NXPropSets     - Number of non-circular property sets
+            YoungE       ShearG       MatDens     XsecA          XsecAsx        XsecAsy          XsecJxx          XsecJyy          XsecJ0                                                               
+PropSetID   [N/m2]       [N/m2]       [kg/m3]     [m2]          [m2]            [m2]             [m4]              [m4] 	   [m4]                                                                        
+---------------------- MEMBER COSINE MATRICES COSM(i,j) ------------------------                                                                                                                        
+            0  NCOSMs         - Number of unique direction cosine matrices
+COSMID	COSM11    COSM12      COSM13       COSM21      COSM22      COSM23     COSM31       COSM32	COSM33                                                                                                 
+------------------------ JOINT ADDITIONAL CONCENTRATED MASSES--------------------------                                                                                                                 
+            0  NCMass         - Number of joints that have concentrated masses
+JointID	JMass		JMXX	        JMYY	        JMZZ                                                                                                                                                           
+      	[kg]		[kg*m^2]    [kg*m^2]	    [kg.m^2]                                                                                                                                                          
+---------------------------- OUTPUT: SUMMARY & OUTFILE ------------------------------                                                                                                                   
+            T  SSSum          - Summary File Logic Variable
+            T  OutCOSM        - Cosine Matrix Logic Variable
+            T  OutAll         - Output all Member Forces Logic Variable
+            1  OutSwtch       - Output to which file variable
+------------------------- MEMBER OUTPUT LIST ------------------------------------------                                                                                                                 
+            1  NMOutputs      - Number of Members whose output must go into OutJckF and/or Fast .out
+MemberID   NOutCnt    NodeCnt [NOutCnt=how many nodes to get output for [< 10]; NodeCnt are local ordinal numbers from the start of the member, and must be >=1 and <= NDiv+1] If NMOutputs=' leave blan
+  (-)        (-)        (-)                                                                                                                                                                             
+   1          2         1 2
+-------------------------- OUTPUT: FAST/SUBDYN OUTPUT-FILE VARIABLES -------------------------                                                                                                          
+            T  TabDelim       - Use Tab Delimitation for numerical outputs
+            1  OutDec         - Output Decimation
+               OutFmt         - Format for numerical outputs
+  "ES11.4e2"
+               OutSFmt        - Format for output column headers
+  "A11"
+------ SSOutList    - The next line(s) contains a list of output parameters that will be output in the main FAST .out. ------                                                                           
+               SSOutList      - List of outputs requested
+  "ReactXss, ReactYss, ReactZss, ReactMXss, ReactMYss, ReactMZss"
+               SSOutList      - List of outputs requested
+  "IntfXss,  IntfYss,  IntfZss,  IntfMXss, IntfMYss, IntfMZss"
+               SSOutList      - List of outputs requested
+  "IntfTDXss,  IntfTDYss,  IntfTDZss,  IntfRDXss, IntfRDYss, IntfRDZss"
+               SSOutList      - List of outputs requested
+  "IntfTAXss,  IntfTAYss,  IntfTAZss,  IntfRAXss, IntfRAYss, IntfRAZss"
+               SSOutList      - List of outputs requested
+  "END"

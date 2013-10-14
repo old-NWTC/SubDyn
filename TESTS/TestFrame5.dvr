@@ -15,6 +15,6 @@ TRUE           Echo           - Echo the input file data (flag)
 ""            InputsFile     - Name of the inputs file if InputsMod = 2
 ---------------------- STEADY STATE INPUTS  ------------------------------------
 0.0   0.0   -0.0011652275   0.0   0.0   0.0   uTPInSteady     - input displacements and rotations ( m, rads )
-0.0   0.0   0.0   0.0   0.0   0.0   uDotTPInSteady  - input translational and rotational velocities ( m/s, rads/s)
-0.0   0.0   0.0   0.0   0.0   0.0   uDotTPInSteady  - input translational and rotational accelerations( m/s^2, rads/s^2)
+0.0   0.0   0.0   0.0   0.0   0.0             uDotTPInSteady  - input translational and rotational velocities ( m/s, rads/s)
+0.0   0.0   0.0   0.0   0.0   0.0             uDotTPInSteady  - input translational and rotational accelerations( m/s^2, rads/s^2)
 END of driver input file

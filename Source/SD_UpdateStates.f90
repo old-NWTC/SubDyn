@@ -17,7 +17,7 @@ Module TempMod
    CONTAINS
    
     !----------------------------------------------------------------------------------------------------------------------------------
-SUBROUTINE SubDyn_UpdateStates( t, n, Inputs, InputTimes, p, x, xd, z, z_next, OtherState, ErrStat, ErrMsg )
+SUBROUTINE SubDyn_UpdateStates( t, n, Inputs, InputTimes, p, x, xd, z, OtherState, ErrStat, ErrMsg )
 ! Loose coupling routine for solving for constraint states, integrating continuous states, and updating discrete states
 ! Constraint states are solved for input time, t; Continuous and discrete states are updated for t + Interval
 ! A guess for the contstraint states at t + Interval is also calculated.
@@ -34,7 +34,6 @@ SUBROUTINE SubDyn_UpdateStates( t, n, Inputs, InputTimes, p, x, xd, z, z_next, O
                                                                            !   Output: Discrete states at t + Interval
       TYPE(SD_ConstraintStateType),       INTENT(INOUT) :: z               ! Input: Initial guess of constraint states at t;
                                                                            !   Output: Constraint states at t
-      TYPE(SD_ConstraintStateType),       INTENT(  OUT) :: z_next          ! Guess of the constraint states at t + Interval
       TYPE(SD_OtherStateType),            INTENT(INOUT) :: OtherState      ! Other/optimization states
       INTEGER(IntKi),                     INTENT(  OUT) :: ErrStat         ! Error status of the operation
       CHARACTER(*),                       INTENT(  OUT) :: ErrMsg          ! Error message if ErrStat /= ErrID_None
@@ -63,11 +62,6 @@ SUBROUTINE SubDyn_UpdateStates( t, n, Inputs, InputTimes, p, x, xd, z, z_next, O
       END IF
       
    
-         ! Set the guess for the constraint states at t + Interval:
-
-      CALL SD_CopyConstrState( z, z_next, MESH_NEWCOPY, ErrStat, ErrMsg)
-      IF ( ErrStat >= AbortErrLev ) RETURN
-
 
          ! Get first time derivatives of continuous states (dxdt): NOT SURE THIS IS NEEDED SINCE it is BEING CALLED WITHIN THE INTEGRATOR
 
@@ -321,11 +315,12 @@ SUBROUTINE SubDyn_CalcContStateDeriv( t, u, p, x, xd, z, OtherState, dxdt, ErrSt
         
       dxdt%DummyContState = 0
       !How is it possible that we have to check this all the time?
+!bjj: INTENT(OUT) automatically deallocates the array on entry.      
       ALLOCATE(dxdt%qm(p%qmL),STAT=ErrStat)  
       ALLOCATE(dxdt%qmdot(p%qmL),STAT=ErrStat)  
       IF ( ErrStat/= 0 ) THEN
          ErrStat = ErrID_Fatal
-         ErrMsg  = 'Error allocating states derivatives in SubDyn_Init'
+         ErrMsg  = 'Error allocating states derivatives in SubDyn_CalcContStateDeriv'
          RETURN
       END IF
       !X=Ax + Bu + Fx
@@ -678,7 +673,7 @@ END SUBROUTINE SD_ABM4
 !      u_out=u(1) !Initialize
 !      !IF ( ErrStat/= 0 ) THEN
 !      !   ErrStat = ErrID_Fatal
-!      !   ErrMsg  = 'Error allocating states derivatives in SubDyn_Init'
+!      !   ErrMsg  = 'Error allocating states derivatives in SubDyn_CalcContStateDeriv'
 !      !   RETURN
 !      !END IF
 !      order = SIZE(u) - 1

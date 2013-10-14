@@ -6,19 +6,21 @@
 !*********************************************************************************************************************************
 ! SubDyn_Types
 !.................................................................................................................................
-! LICENSING
-! Copyright (C) 2012 National Renewable Energy Laboratory
-!
 ! This file is part of SubDyn.
 !
-! SubDyn is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-! published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+! Copyright (C) 2012, 2013 National Renewable Energy Laboratory
 !
-! This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-! of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+! Licensed under the Apache License, Version 2.0 (the "License");
+! you may not use this file except in compliance with the License.
+! You may obtain a copy of the License at
 !
-! You should have received a copy of the GNU General Public License along with ModuleName.
-! If not, see <http://www.gnu.org/licenses/>.
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+! Unless required by applicable law or agreed to in writing, software
+! distributed under the License is distributed on an "AS IS" BASIS,
+! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+! See the License for the specific language governing permissions and
+! limitations under the License.
 !
 !
 ! W A R N I N G : This file was automatically generated from the FAST registry.  Changes made to this file may be lost.
@@ -71,7 +73,7 @@ IMPLICIT NONE
     REAL(ReKi)  :: SubRotateZ 
     CHARACTER(1024)  :: SubDynSum 
     CHARACTER(1024)  :: RootName 
-    REAL(ReKi)  :: DT 
+    REAL(DbKi)  :: DT 
     INTEGER(IntKi)  :: ErrStat 
     INTEGER(IntKi)  :: NJoints 
     INTEGER(IntKi)  :: JointsCol = 4 
@@ -115,16 +117,18 @@ IMPLICIT NONE
     INTEGER(IntKi) , DIMENSION(:,:), ALLOCATABLE  :: MemberNodes 
     INTEGER(IntKi) , DIMENSION(:,:), ALLOCATABLE  :: NodesConnN 
     INTEGER(IntKi) , DIMENSION(:,:), ALLOCATABLE  :: NodesConnE 
+    LOGICAL  :: SSSum 
+    INTEGER(IntKi)  :: UnSum 
   END TYPE SD_InitInputType
 ! =======================
 ! =========  SD_InitOutputType  =======
   TYPE, PUBLIC :: SD_InitOutputType
     CHARACTER(10) , DIMENSION(:), ALLOCATABLE  :: WriteOutputHdr 
     CHARACTER(10) , DIMENSION(:), ALLOCATABLE  :: WriteOutputUnt 
+    TYPE(ProgDesc)  :: Ver 
     INTEGER(IntKi)  :: MaxOutChs = 2000 
     LOGICAL  :: TabDelim 
     LOGICAL  :: OutCOSM 
-    LOGICAL  :: SSSum 
     CHARACTER(10) , DIMENSION(:), ALLOCATABLE  :: SSOutList 
   END TYPE SD_InitOutputType
 ! =======================
@@ -219,14 +223,13 @@ IMPLICIT NONE
     INTEGER(IntKi) , DIMENSION(:), ALLOCATABLE  :: IDY 
     INTEGER(IntKi)  :: NMOutputs 
     INTEGER(IntKi)  :: NumOuts 
-    REAL(ReKi)  :: SDDeltaT 
+    REAL(DbKi)  :: SDDeltaT 
     INTEGER(IntKi)  :: OutSwtch 
     INTEGER(IntKi)  :: UnJckF 
     CHARACTER(1)  :: Delim 
     CHARACTER(20)  :: OutFmt 
     CHARACTER(20)  :: OutSFmt 
     CHARACTER(1024)  :: OutJckF 
-    CHARACTER(1024)  :: JEchoFile 
     TYPE(MeshAuxDataType) , DIMENSION(:), ALLOCATABLE  :: MoutLst 
     TYPE(MeshAuxDataType) , DIMENSION(:), ALLOCATABLE  :: MoutLst2 
     TYPE(MeshAuxDataType) , DIMENSION(:), ALLOCATABLE  :: MoutLst3 
@@ -335,68 +338,136 @@ IMPLICIT NONE
 ! =======================
 CONTAINS
  SUBROUTINE SD_Copymeshauxdatatype( SrcmeshauxdatatypeData, DstmeshauxdatatypeData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(meshauxdatatype), INTENT(INOUT) :: SrcmeshauxdatatypeData
-  TYPE(meshauxdatatype), INTENT(INOUT) :: DstmeshauxdatatypeData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(meshauxdatatype), INTENT(INOUT) :: SrcmeshauxdatatypeData
+   TYPE(meshauxdatatype), INTENT(INOUT) :: DstmeshauxdatatypeData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  DstmeshauxdatatypeData%MemberID = SrcmeshauxdatatypeData%MemberID
-  DstmeshauxdatatypeData%NOutCnt = SrcmeshauxdatatypeData%NOutCnt
-IF ( ALLOCATED( SrcmeshauxdatatypeData%NodeCnt ) ) THEN
-  i1 = SIZE(SrcmeshauxdatatypeData%NodeCnt,1)
-  IF (.NOT.ALLOCATED(DstmeshauxdatatypeData%NodeCnt)) ALLOCATE(DstmeshauxdatatypeData%NodeCnt(i1))
-  DstmeshauxdatatypeData%NodeCnt = SrcmeshauxdatatypeData%NodeCnt
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+   DstmeshauxdatatypeData%MemberID = SrcmeshauxdatatypeData%MemberID
+   DstmeshauxdatatypeData%NOutCnt = SrcmeshauxdatatypeData%NOutCnt
+IF (ALLOCATED(SrcmeshauxdatatypeData%NodeCnt)) THEN
+   i1_l = LBOUND(SrcmeshauxdatatypeData%NodeCnt,1)
+   i1_u = UBOUND(SrcmeshauxdatatypeData%NodeCnt,1)
+   IF (.NOT.ALLOCATED(DstmeshauxdatatypeData%NodeCnt)) THEN 
+      ALLOCATE(DstmeshauxdatatypeData%NodeCnt(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_Copymeshauxdatatype: Error allocating DstmeshauxdatatypeData%NodeCnt.'
+         RETURN
+      END IF
+   END IF
+   DstmeshauxdatatypeData%NodeCnt = SrcmeshauxdatatypeData%NodeCnt
 ENDIF
-IF ( ALLOCATED( SrcmeshauxdatatypeData%NodeIDs ) ) THEN
-  i1 = SIZE(SrcmeshauxdatatypeData%NodeIDs,1)
-  IF (.NOT.ALLOCATED(DstmeshauxdatatypeData%NodeIDs)) ALLOCATE(DstmeshauxdatatypeData%NodeIDs(i1))
-  DstmeshauxdatatypeData%NodeIDs = SrcmeshauxdatatypeData%NodeIDs
+IF (ALLOCATED(SrcmeshauxdatatypeData%NodeIDs)) THEN
+   i1_l = LBOUND(SrcmeshauxdatatypeData%NodeIDs,1)
+   i1_u = UBOUND(SrcmeshauxdatatypeData%NodeIDs,1)
+   IF (.NOT.ALLOCATED(DstmeshauxdatatypeData%NodeIDs)) THEN 
+      ALLOCATE(DstmeshauxdatatypeData%NodeIDs(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_Copymeshauxdatatype: Error allocating DstmeshauxdatatypeData%NodeIDs.'
+         RETURN
+      END IF
+   END IF
+   DstmeshauxdatatypeData%NodeIDs = SrcmeshauxdatatypeData%NodeIDs
 ENDIF
-IF ( ALLOCATED( SrcmeshauxdatatypeData%ElmIDs ) ) THEN
-  i1 = SIZE(SrcmeshauxdatatypeData%ElmIDs,1)
-  i2 = SIZE(SrcmeshauxdatatypeData%ElmIDs,2)
-  IF (.NOT.ALLOCATED(DstmeshauxdatatypeData%ElmIDs)) ALLOCATE(DstmeshauxdatatypeData%ElmIDs(i1,i2))
-  DstmeshauxdatatypeData%ElmIDs = SrcmeshauxdatatypeData%ElmIDs
+IF (ALLOCATED(SrcmeshauxdatatypeData%ElmIDs)) THEN
+   i1_l = LBOUND(SrcmeshauxdatatypeData%ElmIDs,1)
+   i1_u = UBOUND(SrcmeshauxdatatypeData%ElmIDs,1)
+   i2_l = LBOUND(SrcmeshauxdatatypeData%ElmIDs,2)
+   i2_u = UBOUND(SrcmeshauxdatatypeData%ElmIDs,2)
+   IF (.NOT.ALLOCATED(DstmeshauxdatatypeData%ElmIDs)) THEN 
+      ALLOCATE(DstmeshauxdatatypeData%ElmIDs(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_Copymeshauxdatatype: Error allocating DstmeshauxdatatypeData%ElmIDs.'
+         RETURN
+      END IF
+   END IF
+   DstmeshauxdatatypeData%ElmIDs = SrcmeshauxdatatypeData%ElmIDs
 ENDIF
-IF ( ALLOCATED( SrcmeshauxdatatypeData%ElmNds ) ) THEN
-  i1 = SIZE(SrcmeshauxdatatypeData%ElmNds,1)
-  i2 = SIZE(SrcmeshauxdatatypeData%ElmNds,2)
-  IF (.NOT.ALLOCATED(DstmeshauxdatatypeData%ElmNds)) ALLOCATE(DstmeshauxdatatypeData%ElmNds(i1,i2))
-  DstmeshauxdatatypeData%ElmNds = SrcmeshauxdatatypeData%ElmNds
+IF (ALLOCATED(SrcmeshauxdatatypeData%ElmNds)) THEN
+   i1_l = LBOUND(SrcmeshauxdatatypeData%ElmNds,1)
+   i1_u = UBOUND(SrcmeshauxdatatypeData%ElmNds,1)
+   i2_l = LBOUND(SrcmeshauxdatatypeData%ElmNds,2)
+   i2_u = UBOUND(SrcmeshauxdatatypeData%ElmNds,2)
+   IF (.NOT.ALLOCATED(DstmeshauxdatatypeData%ElmNds)) THEN 
+      ALLOCATE(DstmeshauxdatatypeData%ElmNds(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_Copymeshauxdatatype: Error allocating DstmeshauxdatatypeData%ElmNds.'
+         RETURN
+      END IF
+   END IF
+   DstmeshauxdatatypeData%ElmNds = SrcmeshauxdatatypeData%ElmNds
 ENDIF
-  DstmeshauxdatatypeData%ElmID2s = SrcmeshauxdatatypeData%ElmID2s
-  DstmeshauxdatatypeData%ElmNd2s = SrcmeshauxdatatypeData%ElmNd2s
-IF ( ALLOCATED( SrcmeshauxdatatypeData%Me ) ) THEN
-  i1 = SIZE(SrcmeshauxdatatypeData%Me,1)
-  i2 = SIZE(SrcmeshauxdatatypeData%Me,2)
-  i3 = SIZE(SrcmeshauxdatatypeData%Me,3)
-  i4 = SIZE(SrcmeshauxdatatypeData%Me,4)
-  IF (.NOT.ALLOCATED(DstmeshauxdatatypeData%Me)) ALLOCATE(DstmeshauxdatatypeData%Me(i1,i2,i3,i4))
-  DstmeshauxdatatypeData%Me = SrcmeshauxdatatypeData%Me
+   DstmeshauxdatatypeData%ElmID2s = SrcmeshauxdatatypeData%ElmID2s
+   DstmeshauxdatatypeData%ElmNd2s = SrcmeshauxdatatypeData%ElmNd2s
+IF (ALLOCATED(SrcmeshauxdatatypeData%Me)) THEN
+   i1_l = LBOUND(SrcmeshauxdatatypeData%Me,1)
+   i1_u = UBOUND(SrcmeshauxdatatypeData%Me,1)
+   i2_l = LBOUND(SrcmeshauxdatatypeData%Me,2)
+   i2_u = UBOUND(SrcmeshauxdatatypeData%Me,2)
+   i3_l = LBOUND(SrcmeshauxdatatypeData%Me,3)
+   i3_u = UBOUND(SrcmeshauxdatatypeData%Me,3)
+   i4_l = LBOUND(SrcmeshauxdatatypeData%Me,4)
+   i4_u = UBOUND(SrcmeshauxdatatypeData%Me,4)
+   IF (.NOT.ALLOCATED(DstmeshauxdatatypeData%Me)) THEN 
+      ALLOCATE(DstmeshauxdatatypeData%Me(i1_l:i1_u,i2_l:i2_u,i3_l:i3_u,i4_l:i4_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_Copymeshauxdatatype: Error allocating DstmeshauxdatatypeData%Me.'
+         RETURN
+      END IF
+   END IF
+   DstmeshauxdatatypeData%Me = SrcmeshauxdatatypeData%Me
 ENDIF
-IF ( ALLOCATED( SrcmeshauxdatatypeData%Ke ) ) THEN
-  i1 = SIZE(SrcmeshauxdatatypeData%Ke,1)
-  i2 = SIZE(SrcmeshauxdatatypeData%Ke,2)
-  i3 = SIZE(SrcmeshauxdatatypeData%Ke,3)
-  i4 = SIZE(SrcmeshauxdatatypeData%Ke,4)
-  IF (.NOT.ALLOCATED(DstmeshauxdatatypeData%Ke)) ALLOCATE(DstmeshauxdatatypeData%Ke(i1,i2,i3,i4))
-  DstmeshauxdatatypeData%Ke = SrcmeshauxdatatypeData%Ke
+IF (ALLOCATED(SrcmeshauxdatatypeData%Ke)) THEN
+   i1_l = LBOUND(SrcmeshauxdatatypeData%Ke,1)
+   i1_u = UBOUND(SrcmeshauxdatatypeData%Ke,1)
+   i2_l = LBOUND(SrcmeshauxdatatypeData%Ke,2)
+   i2_u = UBOUND(SrcmeshauxdatatypeData%Ke,2)
+   i3_l = LBOUND(SrcmeshauxdatatypeData%Ke,3)
+   i3_u = UBOUND(SrcmeshauxdatatypeData%Ke,3)
+   i4_l = LBOUND(SrcmeshauxdatatypeData%Ke,4)
+   i4_u = UBOUND(SrcmeshauxdatatypeData%Ke,4)
+   IF (.NOT.ALLOCATED(DstmeshauxdatatypeData%Ke)) THEN 
+      ALLOCATE(DstmeshauxdatatypeData%Ke(i1_l:i1_u,i2_l:i2_u,i3_l:i3_u,i4_l:i4_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_Copymeshauxdatatype: Error allocating DstmeshauxdatatypeData%Ke.'
+         RETURN
+      END IF
+   END IF
+   DstmeshauxdatatypeData%Ke = SrcmeshauxdatatypeData%Ke
 ENDIF
-IF ( ALLOCATED( SrcmeshauxdatatypeData%Fg ) ) THEN
-  i1 = SIZE(SrcmeshauxdatatypeData%Fg,1)
-  i2 = SIZE(SrcmeshauxdatatypeData%Fg,2)
-  i3 = SIZE(SrcmeshauxdatatypeData%Fg,3)
-  IF (.NOT.ALLOCATED(DstmeshauxdatatypeData%Fg)) ALLOCATE(DstmeshauxdatatypeData%Fg(i1,i2,i3))
-  DstmeshauxdatatypeData%Fg = SrcmeshauxdatatypeData%Fg
+IF (ALLOCATED(SrcmeshauxdatatypeData%Fg)) THEN
+   i1_l = LBOUND(SrcmeshauxdatatypeData%Fg,1)
+   i1_u = UBOUND(SrcmeshauxdatatypeData%Fg,1)
+   i2_l = LBOUND(SrcmeshauxdatatypeData%Fg,2)
+   i2_u = UBOUND(SrcmeshauxdatatypeData%Fg,2)
+   i3_l = LBOUND(SrcmeshauxdatatypeData%Fg,3)
+   i3_u = UBOUND(SrcmeshauxdatatypeData%Fg,3)
+   IF (.NOT.ALLOCATED(DstmeshauxdatatypeData%Fg)) THEN 
+      ALLOCATE(DstmeshauxdatatypeData%Fg(i1_l:i1_u,i2_l:i2_u,i3_l:i3_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_Copymeshauxdatatype: Error allocating DstmeshauxdatatypeData%Fg.'
+         RETURN
+      END IF
+   END IF
+   DstmeshauxdatatypeData%Fg = SrcmeshauxdatatypeData%Fg
 ENDIF
-  DstmeshauxdatatypeData%Me2 = SrcmeshauxdatatypeData%Me2
-  DstmeshauxdatatypeData%Ke2 = SrcmeshauxdatatypeData%Ke2
-  DstmeshauxdatatypeData%Fg2 = SrcmeshauxdatatypeData%Fg2
+   DstmeshauxdatatypeData%Me2 = SrcmeshauxdatatypeData%Me2
+   DstmeshauxdatatypeData%Ke2 = SrcmeshauxdatatypeData%Ke2
+   DstmeshauxdatatypeData%Fg2 = SrcmeshauxdatatypeData%Fg2
  END SUBROUTINE SD_Copymeshauxdatatype
 
  SUBROUTINE SD_Destroymeshauxdatatype( meshauxdatatypeData, ErrStat, ErrMsg )
@@ -407,13 +478,27 @@ ENDIF
 ! 
   ErrStat = ErrID_None
   ErrMsg  = ""
-  IF ( ALLOCATED(meshauxdatatypeData%NodeCnt) ) DEALLOCATE(meshauxdatatypeData%NodeCnt)
-  IF ( ALLOCATED(meshauxdatatypeData%NodeIDs) ) DEALLOCATE(meshauxdatatypeData%NodeIDs)
-  IF ( ALLOCATED(meshauxdatatypeData%ElmIDs) ) DEALLOCATE(meshauxdatatypeData%ElmIDs)
-  IF ( ALLOCATED(meshauxdatatypeData%ElmNds) ) DEALLOCATE(meshauxdatatypeData%ElmNds)
-  IF ( ALLOCATED(meshauxdatatypeData%Me) ) DEALLOCATE(meshauxdatatypeData%Me)
-  IF ( ALLOCATED(meshauxdatatypeData%Ke) ) DEALLOCATE(meshauxdatatypeData%Ke)
-  IF ( ALLOCATED(meshauxdatatypeData%Fg) ) DEALLOCATE(meshauxdatatypeData%Fg)
+IF (ALLOCATED(meshauxdatatypeData%NodeCnt)) THEN
+   DEALLOCATE(meshauxdatatypeData%NodeCnt)
+ENDIF
+IF (ALLOCATED(meshauxdatatypeData%NodeIDs)) THEN
+   DEALLOCATE(meshauxdatatypeData%NodeIDs)
+ENDIF
+IF (ALLOCATED(meshauxdatatypeData%ElmIDs)) THEN
+   DEALLOCATE(meshauxdatatypeData%ElmIDs)
+ENDIF
+IF (ALLOCATED(meshauxdatatypeData%ElmNds)) THEN
+   DEALLOCATE(meshauxdatatypeData%ElmNds)
+ENDIF
+IF (ALLOCATED(meshauxdatatypeData%Me)) THEN
+   DEALLOCATE(meshauxdatatypeData%Me)
+ENDIF
+IF (ALLOCATED(meshauxdatatypeData%Ke)) THEN
+   DEALLOCATE(meshauxdatatypeData%Ke)
+ENDIF
+IF (ALLOCATED(meshauxdatatypeData%Fg)) THEN
+   DEALLOCATE(meshauxdatatypeData%Fg)
+ENDIF
  END SUBROUTINE SD_Destroymeshauxdatatype
 
  SUBROUTINE SD_Packmeshauxdatatype( ReKiBuf, DbKiBuf, IntKiBuf, Indata, ErrStat, ErrMsg, SizeOnly )
@@ -616,27 +701,29 @@ ENDIF
  END SUBROUTINE SD_UnPackmeshauxdatatype
 
  SUBROUTINE SD_Copyelemproptype( SrcelemproptypeData, DstelemproptypeData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(elemproptype), INTENT(INOUT) :: SrcelemproptypeData
-  TYPE(elemproptype), INTENT(INOUT) :: DstelemproptypeData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(elemproptype), INTENT(INOUT) :: SrcelemproptypeData
+   TYPE(elemproptype), INTENT(INOUT) :: DstelemproptypeData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  DstelemproptypeData%Area = SrcelemproptypeData%Area
-  DstelemproptypeData%Length = SrcelemproptypeData%Length
-  DstelemproptypeData%Ixx = SrcelemproptypeData%Ixx
-  DstelemproptypeData%Iyy = SrcelemproptypeData%Iyy
-  DstelemproptypeData%Jzz = SrcelemproptypeData%Jzz
-  DstelemproptypeData%Shear = SrcelemproptypeData%Shear
-  DstelemproptypeData%Kappa = SrcelemproptypeData%Kappa
-  DstelemproptypeData%YoungE = SrcelemproptypeData%YoungE
-  DstelemproptypeData%ShearG = SrcelemproptypeData%ShearG
-  DstelemproptypeData%Rho = SrcelemproptypeData%Rho
-  DstelemproptypeData%DirCos = SrcelemproptypeData%DirCos
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+   DstelemproptypeData%Area = SrcelemproptypeData%Area
+   DstelemproptypeData%Length = SrcelemproptypeData%Length
+   DstelemproptypeData%Ixx = SrcelemproptypeData%Ixx
+   DstelemproptypeData%Iyy = SrcelemproptypeData%Iyy
+   DstelemproptypeData%Jzz = SrcelemproptypeData%Jzz
+   DstelemproptypeData%Shear = SrcelemproptypeData%Shear
+   DstelemproptypeData%Kappa = SrcelemproptypeData%Kappa
+   DstelemproptypeData%YoungE = SrcelemproptypeData%YoungE
+   DstelemproptypeData%ShearG = SrcelemproptypeData%ShearG
+   DstelemproptypeData%Rho = SrcelemproptypeData%Rho
+   DstelemproptypeData%DirCos = SrcelemproptypeData%DirCos
  END SUBROUTINE SD_Copyelemproptype
 
  SUBROUTINE SD_Destroyelemproptype( elemproptypeData, ErrStat, ErrMsg )
@@ -779,163 +866,344 @@ ENDIF
  END SUBROUTINE SD_UnPackelemproptype
 
  SUBROUTINE SD_CopyInitInput( SrcInitInputData, DstInitInputData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(SD_initinputtype), INTENT(INOUT) :: SrcInitInputData
-  TYPE(SD_initinputtype), INTENT(INOUT) :: DstInitInputData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(SD_initinputtype), INTENT(INOUT) :: SrcInitInputData
+   TYPE(SD_initinputtype), INTENT(INOUT) :: DstInitInputData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  DstInitInputData%SDInputFile = SrcInitInputData%SDInputFile
-  DstInitInputData%g = SrcInitInputData%g
-  DstInitInputData%TP_RefPoint = SrcInitInputData%TP_RefPoint
-  DstInitInputData%SubRotateZ = SrcInitInputData%SubRotateZ
-  DstInitInputData%SubDynSum = SrcInitInputData%SubDynSum
-  DstInitInputData%RootName = SrcInitInputData%RootName
-  DstInitInputData%DT = SrcInitInputData%DT
-  DstInitInputData%ErrStat = SrcInitInputData%ErrStat
-  DstInitInputData%NJoints = SrcInitInputData%NJoints
-  DstInitInputData%JointsCol = SrcInitInputData%JointsCol
-  DstInitInputData%MembersCol = SrcInitInputData%MembersCol
-  DstInitInputData%NPropSets = SrcInitInputData%NPropSets
-  DstInitInputData%PropSetsCol = SrcInitInputData%PropSetsCol
-  DstInitInputData%NXPropSets = SrcInitInputData%NXPropSets
-  DstInitInputData%XPropSetsCol = SrcInitInputData%XPropSetsCol
-  DstInitInputData%ReactCol = SrcInitInputData%ReactCol
-  DstInitInputData%NInterf = SrcInitInputData%NInterf
-  DstInitInputData%InterfCol = SrcInitInputData%InterfCol
-  DstInitInputData%NCMass = SrcInitInputData%NCMass
-  DstInitInputData%CMassCol = SrcInitInputData%CMassCol
-  DstInitInputData%NCOSMs = SrcInitInputData%NCOSMs
-  DstInitInputData%COSMsCol = SrcInitInputData%COSMsCol
-  DstInitInputData%FEMMod = SrcInitInputData%FEMMod
-  DstInitInputData%NDiv = SrcInitInputData%NDiv
-  DstInitInputData%CBMod = SrcInitInputData%CBMod
-IF ( ALLOCATED( SrcInitInputData%Joints ) ) THEN
-  i1 = SIZE(SrcInitInputData%Joints,1)
-  i2 = SIZE(SrcInitInputData%Joints,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%Joints)) ALLOCATE(DstInitInputData%Joints(i1,i2))
-  DstInitInputData%Joints = SrcInitInputData%Joints
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+   DstInitInputData%SDInputFile = SrcInitInputData%SDInputFile
+   DstInitInputData%g = SrcInitInputData%g
+   DstInitInputData%TP_RefPoint = SrcInitInputData%TP_RefPoint
+   DstInitInputData%SubRotateZ = SrcInitInputData%SubRotateZ
+   DstInitInputData%SubDynSum = SrcInitInputData%SubDynSum
+   DstInitInputData%RootName = SrcInitInputData%RootName
+   DstInitInputData%DT = SrcInitInputData%DT
+   DstInitInputData%ErrStat = SrcInitInputData%ErrStat
+   DstInitInputData%NJoints = SrcInitInputData%NJoints
+   DstInitInputData%JointsCol = SrcInitInputData%JointsCol
+   DstInitInputData%MembersCol = SrcInitInputData%MembersCol
+   DstInitInputData%NPropSets = SrcInitInputData%NPropSets
+   DstInitInputData%PropSetsCol = SrcInitInputData%PropSetsCol
+   DstInitInputData%NXPropSets = SrcInitInputData%NXPropSets
+   DstInitInputData%XPropSetsCol = SrcInitInputData%XPropSetsCol
+   DstInitInputData%ReactCol = SrcInitInputData%ReactCol
+   DstInitInputData%NInterf = SrcInitInputData%NInterf
+   DstInitInputData%InterfCol = SrcInitInputData%InterfCol
+   DstInitInputData%NCMass = SrcInitInputData%NCMass
+   DstInitInputData%CMassCol = SrcInitInputData%CMassCol
+   DstInitInputData%NCOSMs = SrcInitInputData%NCOSMs
+   DstInitInputData%COSMsCol = SrcInitInputData%COSMsCol
+   DstInitInputData%FEMMod = SrcInitInputData%FEMMod
+   DstInitInputData%NDiv = SrcInitInputData%NDiv
+   DstInitInputData%CBMod = SrcInitInputData%CBMod
+IF (ALLOCATED(SrcInitInputData%Joints)) THEN
+   i1_l = LBOUND(SrcInitInputData%Joints,1)
+   i1_u = UBOUND(SrcInitInputData%Joints,1)
+   i2_l = LBOUND(SrcInitInputData%Joints,2)
+   i2_u = UBOUND(SrcInitInputData%Joints,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%Joints)) THEN 
+      ALLOCATE(DstInitInputData%Joints(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%Joints.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%Joints = SrcInitInputData%Joints
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%PropSets ) ) THEN
-  i1 = SIZE(SrcInitInputData%PropSets,1)
-  i2 = SIZE(SrcInitInputData%PropSets,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%PropSets)) ALLOCATE(DstInitInputData%PropSets(i1,i2))
-  DstInitInputData%PropSets = SrcInitInputData%PropSets
+IF (ALLOCATED(SrcInitInputData%PropSets)) THEN
+   i1_l = LBOUND(SrcInitInputData%PropSets,1)
+   i1_u = UBOUND(SrcInitInputData%PropSets,1)
+   i2_l = LBOUND(SrcInitInputData%PropSets,2)
+   i2_u = UBOUND(SrcInitInputData%PropSets,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%PropSets)) THEN 
+      ALLOCATE(DstInitInputData%PropSets(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%PropSets.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%PropSets = SrcInitInputData%PropSets
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%XPropSets ) ) THEN
-  i1 = SIZE(SrcInitInputData%XPropSets,1)
-  i2 = SIZE(SrcInitInputData%XPropSets,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%XPropSets)) ALLOCATE(DstInitInputData%XPropSets(i1,i2))
-  DstInitInputData%XPropSets = SrcInitInputData%XPropSets
+IF (ALLOCATED(SrcInitInputData%XPropSets)) THEN
+   i1_l = LBOUND(SrcInitInputData%XPropSets,1)
+   i1_u = UBOUND(SrcInitInputData%XPropSets,1)
+   i2_l = LBOUND(SrcInitInputData%XPropSets,2)
+   i2_u = UBOUND(SrcInitInputData%XPropSets,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%XPropSets)) THEN 
+      ALLOCATE(DstInitInputData%XPropSets(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%XPropSets.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%XPropSets = SrcInitInputData%XPropSets
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%COSMs ) ) THEN
-  i1 = SIZE(SrcInitInputData%COSMs,1)
-  i2 = SIZE(SrcInitInputData%COSMs,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%COSMs)) ALLOCATE(DstInitInputData%COSMs(i1,i2))
-  DstInitInputData%COSMs = SrcInitInputData%COSMs
+IF (ALLOCATED(SrcInitInputData%COSMs)) THEN
+   i1_l = LBOUND(SrcInitInputData%COSMs,1)
+   i1_u = UBOUND(SrcInitInputData%COSMs,1)
+   i2_l = LBOUND(SrcInitInputData%COSMs,2)
+   i2_u = UBOUND(SrcInitInputData%COSMs,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%COSMs)) THEN 
+      ALLOCATE(DstInitInputData%COSMs(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%COSMs.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%COSMs = SrcInitInputData%COSMs
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%CMass ) ) THEN
-  i1 = SIZE(SrcInitInputData%CMass,1)
-  i2 = SIZE(SrcInitInputData%CMass,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%CMass)) ALLOCATE(DstInitInputData%CMass(i1,i2))
-  DstInitInputData%CMass = SrcInitInputData%CMass
+IF (ALLOCATED(SrcInitInputData%CMass)) THEN
+   i1_l = LBOUND(SrcInitInputData%CMass,1)
+   i1_u = UBOUND(SrcInitInputData%CMass,1)
+   i2_l = LBOUND(SrcInitInputData%CMass,2)
+   i2_u = UBOUND(SrcInitInputData%CMass,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%CMass)) THEN 
+      ALLOCATE(DstInitInputData%CMass(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%CMass.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%CMass = SrcInitInputData%CMass
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%JDampings ) ) THEN
-  i1 = SIZE(SrcInitInputData%JDampings,1)
-  IF (.NOT.ALLOCATED(DstInitInputData%JDampings)) ALLOCATE(DstInitInputData%JDampings(i1))
-  DstInitInputData%JDampings = SrcInitInputData%JDampings
+IF (ALLOCATED(SrcInitInputData%JDampings)) THEN
+   i1_l = LBOUND(SrcInitInputData%JDampings,1)
+   i1_u = UBOUND(SrcInitInputData%JDampings,1)
+   IF (.NOT.ALLOCATED(DstInitInputData%JDampings)) THEN 
+      ALLOCATE(DstInitInputData%JDampings(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%JDampings.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%JDampings = SrcInitInputData%JDampings
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%Members ) ) THEN
-  i1 = SIZE(SrcInitInputData%Members,1)
-  i2 = SIZE(SrcInitInputData%Members,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%Members)) ALLOCATE(DstInitInputData%Members(i1,i2))
-  DstInitInputData%Members = SrcInitInputData%Members
+IF (ALLOCATED(SrcInitInputData%Members)) THEN
+   i1_l = LBOUND(SrcInitInputData%Members,1)
+   i1_u = UBOUND(SrcInitInputData%Members,1)
+   i2_l = LBOUND(SrcInitInputData%Members,2)
+   i2_u = UBOUND(SrcInitInputData%Members,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%Members)) THEN 
+      ALLOCATE(DstInitInputData%Members(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%Members.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%Members = SrcInitInputData%Members
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%Interf ) ) THEN
-  i1 = SIZE(SrcInitInputData%Interf,1)
-  i2 = SIZE(SrcInitInputData%Interf,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%Interf)) ALLOCATE(DstInitInputData%Interf(i1,i2))
-  DstInitInputData%Interf = SrcInitInputData%Interf
+IF (ALLOCATED(SrcInitInputData%Interf)) THEN
+   i1_l = LBOUND(SrcInitInputData%Interf,1)
+   i1_u = UBOUND(SrcInitInputData%Interf,1)
+   i2_l = LBOUND(SrcInitInputData%Interf,2)
+   i2_u = UBOUND(SrcInitInputData%Interf,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%Interf)) THEN 
+      ALLOCATE(DstInitInputData%Interf(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%Interf.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%Interf = SrcInitInputData%Interf
 ENDIF
-  DstInitInputData%NNode = SrcInitInputData%NNode
-  DstInitInputData%NElem = SrcInitInputData%NElem
-  DstInitInputData%NProp = SrcInitInputData%NProp
-  DstInitInputData%TDOF = SrcInitInputData%TDOF
-  DstInitInputData%MaxMemJnt = SrcInitInputData%MaxMemJnt
-IF ( ALLOCATED( SrcInitInputData%Nodes ) ) THEN
-  i1 = SIZE(SrcInitInputData%Nodes,1)
-  i2 = SIZE(SrcInitInputData%Nodes,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%Nodes)) ALLOCATE(DstInitInputData%Nodes(i1,i2))
-  DstInitInputData%Nodes = SrcInitInputData%Nodes
+   DstInitInputData%NNode = SrcInitInputData%NNode
+   DstInitInputData%NElem = SrcInitInputData%NElem
+   DstInitInputData%NProp = SrcInitInputData%NProp
+   DstInitInputData%TDOF = SrcInitInputData%TDOF
+   DstInitInputData%MaxMemJnt = SrcInitInputData%MaxMemJnt
+IF (ALLOCATED(SrcInitInputData%Nodes)) THEN
+   i1_l = LBOUND(SrcInitInputData%Nodes,1)
+   i1_u = UBOUND(SrcInitInputData%Nodes,1)
+   i2_l = LBOUND(SrcInitInputData%Nodes,2)
+   i2_u = UBOUND(SrcInitInputData%Nodes,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%Nodes)) THEN 
+      ALLOCATE(DstInitInputData%Nodes(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%Nodes.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%Nodes = SrcInitInputData%Nodes
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%Props ) ) THEN
-  i1 = SIZE(SrcInitInputData%Props,1)
-  i2 = SIZE(SrcInitInputData%Props,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%Props)) ALLOCATE(DstInitInputData%Props(i1,i2))
-  DstInitInputData%Props = SrcInitInputData%Props
+IF (ALLOCATED(SrcInitInputData%Props)) THEN
+   i1_l = LBOUND(SrcInitInputData%Props,1)
+   i1_u = UBOUND(SrcInitInputData%Props,1)
+   i2_l = LBOUND(SrcInitInputData%Props,2)
+   i2_u = UBOUND(SrcInitInputData%Props,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%Props)) THEN 
+      ALLOCATE(DstInitInputData%Props(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%Props.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%Props = SrcInitInputData%Props
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%K ) ) THEN
-  i1 = SIZE(SrcInitInputData%K,1)
-  i2 = SIZE(SrcInitInputData%K,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%K)) ALLOCATE(DstInitInputData%K(i1,i2))
-  DstInitInputData%K = SrcInitInputData%K
+IF (ALLOCATED(SrcInitInputData%K)) THEN
+   i1_l = LBOUND(SrcInitInputData%K,1)
+   i1_u = UBOUND(SrcInitInputData%K,1)
+   i2_l = LBOUND(SrcInitInputData%K,2)
+   i2_u = UBOUND(SrcInitInputData%K,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%K)) THEN 
+      ALLOCATE(DstInitInputData%K(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%K.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%K = SrcInitInputData%K
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%M ) ) THEN
-  i1 = SIZE(SrcInitInputData%M,1)
-  i2 = SIZE(SrcInitInputData%M,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%M)) ALLOCATE(DstInitInputData%M(i1,i2))
-  DstInitInputData%M = SrcInitInputData%M
+IF (ALLOCATED(SrcInitInputData%M)) THEN
+   i1_l = LBOUND(SrcInitInputData%M,1)
+   i1_u = UBOUND(SrcInitInputData%M,1)
+   i2_l = LBOUND(SrcInitInputData%M,2)
+   i2_u = UBOUND(SrcInitInputData%M,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%M)) THEN 
+      ALLOCATE(DstInitInputData%M(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%M.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%M = SrcInitInputData%M
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%F ) ) THEN
-  i1 = SIZE(SrcInitInputData%F,1)
-  IF (.NOT.ALLOCATED(DstInitInputData%F)) ALLOCATE(DstInitInputData%F(i1))
-  DstInitInputData%F = SrcInitInputData%F
+IF (ALLOCATED(SrcInitInputData%F)) THEN
+   i1_l = LBOUND(SrcInitInputData%F,1)
+   i1_u = UBOUND(SrcInitInputData%F,1)
+   IF (.NOT.ALLOCATED(DstInitInputData%F)) THEN 
+      ALLOCATE(DstInitInputData%F(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%F.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%F = SrcInitInputData%F
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%FG ) ) THEN
-  i1 = SIZE(SrcInitInputData%FG,1)
-  IF (.NOT.ALLOCATED(DstInitInputData%FG)) ALLOCATE(DstInitInputData%FG(i1))
-  DstInitInputData%FG = SrcInitInputData%FG
+IF (ALLOCATED(SrcInitInputData%FG)) THEN
+   i1_l = LBOUND(SrcInitInputData%FG,1)
+   i1_u = UBOUND(SrcInitInputData%FG,1)
+   IF (.NOT.ALLOCATED(DstInitInputData%FG)) THEN 
+      ALLOCATE(DstInitInputData%FG(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%FG.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%FG = SrcInitInputData%FG
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%ElemProps ) ) THEN
-  i1 = SIZE(SrcInitInputData%ElemProps,1)
-  i2 = SIZE(SrcInitInputData%ElemProps,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%ElemProps)) ALLOCATE(DstInitInputData%ElemProps(i1,i2))
-  DstInitInputData%ElemProps = SrcInitInputData%ElemProps
+IF (ALLOCATED(SrcInitInputData%ElemProps)) THEN
+   i1_l = LBOUND(SrcInitInputData%ElemProps,1)
+   i1_u = UBOUND(SrcInitInputData%ElemProps,1)
+   i2_l = LBOUND(SrcInitInputData%ElemProps,2)
+   i2_u = UBOUND(SrcInitInputData%ElemProps,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%ElemProps)) THEN 
+      ALLOCATE(DstInitInputData%ElemProps(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%ElemProps.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%ElemProps = SrcInitInputData%ElemProps
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%BCs ) ) THEN
-  i1 = SIZE(SrcInitInputData%BCs,1)
-  i2 = SIZE(SrcInitInputData%BCs,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%BCs)) ALLOCATE(DstInitInputData%BCs(i1,i2))
-  DstInitInputData%BCs = SrcInitInputData%BCs
+IF (ALLOCATED(SrcInitInputData%BCs)) THEN
+   i1_l = LBOUND(SrcInitInputData%BCs,1)
+   i1_u = UBOUND(SrcInitInputData%BCs,1)
+   i2_l = LBOUND(SrcInitInputData%BCs,2)
+   i2_u = UBOUND(SrcInitInputData%BCs,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%BCs)) THEN 
+      ALLOCATE(DstInitInputData%BCs(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%BCs.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%BCs = SrcInitInputData%BCs
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%IntFc ) ) THEN
-  i1 = SIZE(SrcInitInputData%IntFc,1)
-  i2 = SIZE(SrcInitInputData%IntFc,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%IntFc)) ALLOCATE(DstInitInputData%IntFc(i1,i2))
-  DstInitInputData%IntFc = SrcInitInputData%IntFc
+IF (ALLOCATED(SrcInitInputData%IntFc)) THEN
+   i1_l = LBOUND(SrcInitInputData%IntFc,1)
+   i1_u = UBOUND(SrcInitInputData%IntFc,1)
+   i2_l = LBOUND(SrcInitInputData%IntFc,2)
+   i2_u = UBOUND(SrcInitInputData%IntFc,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%IntFc)) THEN 
+      ALLOCATE(DstInitInputData%IntFc(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%IntFc.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%IntFc = SrcInitInputData%IntFc
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%MemberNodes ) ) THEN
-  i1 = SIZE(SrcInitInputData%MemberNodes,1)
-  i2 = SIZE(SrcInitInputData%MemberNodes,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%MemberNodes)) ALLOCATE(DstInitInputData%MemberNodes(i1,i2))
-  DstInitInputData%MemberNodes = SrcInitInputData%MemberNodes
+IF (ALLOCATED(SrcInitInputData%MemberNodes)) THEN
+   i1_l = LBOUND(SrcInitInputData%MemberNodes,1)
+   i1_u = UBOUND(SrcInitInputData%MemberNodes,1)
+   i2_l = LBOUND(SrcInitInputData%MemberNodes,2)
+   i2_u = UBOUND(SrcInitInputData%MemberNodes,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%MemberNodes)) THEN 
+      ALLOCATE(DstInitInputData%MemberNodes(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%MemberNodes.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%MemberNodes = SrcInitInputData%MemberNodes
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%NodesConnN ) ) THEN
-  i1 = SIZE(SrcInitInputData%NodesConnN,1)
-  i2 = SIZE(SrcInitInputData%NodesConnN,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%NodesConnN)) ALLOCATE(DstInitInputData%NodesConnN(i1,i2))
-  DstInitInputData%NodesConnN = SrcInitInputData%NodesConnN
+IF (ALLOCATED(SrcInitInputData%NodesConnN)) THEN
+   i1_l = LBOUND(SrcInitInputData%NodesConnN,1)
+   i1_u = UBOUND(SrcInitInputData%NodesConnN,1)
+   i2_l = LBOUND(SrcInitInputData%NodesConnN,2)
+   i2_u = UBOUND(SrcInitInputData%NodesConnN,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%NodesConnN)) THEN 
+      ALLOCATE(DstInitInputData%NodesConnN(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%NodesConnN.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%NodesConnN = SrcInitInputData%NodesConnN
 ENDIF
-IF ( ALLOCATED( SrcInitInputData%NodesConnE ) ) THEN
-  i1 = SIZE(SrcInitInputData%NodesConnE,1)
-  i2 = SIZE(SrcInitInputData%NodesConnE,2)
-  IF (.NOT.ALLOCATED(DstInitInputData%NodesConnE)) ALLOCATE(DstInitInputData%NodesConnE(i1,i2))
-  DstInitInputData%NodesConnE = SrcInitInputData%NodesConnE
+IF (ALLOCATED(SrcInitInputData%NodesConnE)) THEN
+   i1_l = LBOUND(SrcInitInputData%NodesConnE,1)
+   i1_u = UBOUND(SrcInitInputData%NodesConnE,1)
+   i2_l = LBOUND(SrcInitInputData%NodesConnE,2)
+   i2_u = UBOUND(SrcInitInputData%NodesConnE,2)
+   IF (.NOT.ALLOCATED(DstInitInputData%NodesConnE)) THEN 
+      ALLOCATE(DstInitInputData%NodesConnE(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitInput: Error allocating DstInitInputData%NodesConnE.'
+         RETURN
+      END IF
+   END IF
+   DstInitInputData%NodesConnE = SrcInitInputData%NodesConnE
 ENDIF
+   DstInitInputData%SSSum = SrcInitInputData%SSSum
+   DstInitInputData%UnSum = SrcInitInputData%UnSum
  END SUBROUTINE SD_CopyInitInput
 
  SUBROUTINE SD_DestroyInitInput( InitInputData, ErrStat, ErrMsg )
@@ -946,26 +1214,66 @@ ENDIF
 ! 
   ErrStat = ErrID_None
   ErrMsg  = ""
-  IF ( ALLOCATED(InitInputData%Joints) ) DEALLOCATE(InitInputData%Joints)
-  IF ( ALLOCATED(InitInputData%PropSets) ) DEALLOCATE(InitInputData%PropSets)
-  IF ( ALLOCATED(InitInputData%XPropSets) ) DEALLOCATE(InitInputData%XPropSets)
-  IF ( ALLOCATED(InitInputData%COSMs) ) DEALLOCATE(InitInputData%COSMs)
-  IF ( ALLOCATED(InitInputData%CMass) ) DEALLOCATE(InitInputData%CMass)
-  IF ( ALLOCATED(InitInputData%JDampings) ) DEALLOCATE(InitInputData%JDampings)
-  IF ( ALLOCATED(InitInputData%Members) ) DEALLOCATE(InitInputData%Members)
-  IF ( ALLOCATED(InitInputData%Interf) ) DEALLOCATE(InitInputData%Interf)
-  IF ( ALLOCATED(InitInputData%Nodes) ) DEALLOCATE(InitInputData%Nodes)
-  IF ( ALLOCATED(InitInputData%Props) ) DEALLOCATE(InitInputData%Props)
-  IF ( ALLOCATED(InitInputData%K) ) DEALLOCATE(InitInputData%K)
-  IF ( ALLOCATED(InitInputData%M) ) DEALLOCATE(InitInputData%M)
-  IF ( ALLOCATED(InitInputData%F) ) DEALLOCATE(InitInputData%F)
-  IF ( ALLOCATED(InitInputData%FG) ) DEALLOCATE(InitInputData%FG)
-  IF ( ALLOCATED(InitInputData%ElemProps) ) DEALLOCATE(InitInputData%ElemProps)
-  IF ( ALLOCATED(InitInputData%BCs) ) DEALLOCATE(InitInputData%BCs)
-  IF ( ALLOCATED(InitInputData%IntFc) ) DEALLOCATE(InitInputData%IntFc)
-  IF ( ALLOCATED(InitInputData%MemberNodes) ) DEALLOCATE(InitInputData%MemberNodes)
-  IF ( ALLOCATED(InitInputData%NodesConnN) ) DEALLOCATE(InitInputData%NodesConnN)
-  IF ( ALLOCATED(InitInputData%NodesConnE) ) DEALLOCATE(InitInputData%NodesConnE)
+IF (ALLOCATED(InitInputData%Joints)) THEN
+   DEALLOCATE(InitInputData%Joints)
+ENDIF
+IF (ALLOCATED(InitInputData%PropSets)) THEN
+   DEALLOCATE(InitInputData%PropSets)
+ENDIF
+IF (ALLOCATED(InitInputData%XPropSets)) THEN
+   DEALLOCATE(InitInputData%XPropSets)
+ENDIF
+IF (ALLOCATED(InitInputData%COSMs)) THEN
+   DEALLOCATE(InitInputData%COSMs)
+ENDIF
+IF (ALLOCATED(InitInputData%CMass)) THEN
+   DEALLOCATE(InitInputData%CMass)
+ENDIF
+IF (ALLOCATED(InitInputData%JDampings)) THEN
+   DEALLOCATE(InitInputData%JDampings)
+ENDIF
+IF (ALLOCATED(InitInputData%Members)) THEN
+   DEALLOCATE(InitInputData%Members)
+ENDIF
+IF (ALLOCATED(InitInputData%Interf)) THEN
+   DEALLOCATE(InitInputData%Interf)
+ENDIF
+IF (ALLOCATED(InitInputData%Nodes)) THEN
+   DEALLOCATE(InitInputData%Nodes)
+ENDIF
+IF (ALLOCATED(InitInputData%Props)) THEN
+   DEALLOCATE(InitInputData%Props)
+ENDIF
+IF (ALLOCATED(InitInputData%K)) THEN
+   DEALLOCATE(InitInputData%K)
+ENDIF
+IF (ALLOCATED(InitInputData%M)) THEN
+   DEALLOCATE(InitInputData%M)
+ENDIF
+IF (ALLOCATED(InitInputData%F)) THEN
+   DEALLOCATE(InitInputData%F)
+ENDIF
+IF (ALLOCATED(InitInputData%FG)) THEN
+   DEALLOCATE(InitInputData%FG)
+ENDIF
+IF (ALLOCATED(InitInputData%ElemProps)) THEN
+   DEALLOCATE(InitInputData%ElemProps)
+ENDIF
+IF (ALLOCATED(InitInputData%BCs)) THEN
+   DEALLOCATE(InitInputData%BCs)
+ENDIF
+IF (ALLOCATED(InitInputData%IntFc)) THEN
+   DEALLOCATE(InitInputData%IntFc)
+ENDIF
+IF (ALLOCATED(InitInputData%MemberNodes)) THEN
+   DEALLOCATE(InitInputData%MemberNodes)
+ENDIF
+IF (ALLOCATED(InitInputData%NodesConnN)) THEN
+   DEALLOCATE(InitInputData%NodesConnN)
+ENDIF
+IF (ALLOCATED(InitInputData%NodesConnE)) THEN
+   DEALLOCATE(InitInputData%NodesConnE)
+ENDIF
  END SUBROUTINE SD_DestroyInitInput
 
  SUBROUTINE SD_PackInitInput( ReKiBuf, DbKiBuf, IntKiBuf, Indata, ErrStat, ErrMsg, SizeOnly )
@@ -1005,7 +1313,7 @@ ENDIF
   Re_BufSz   = Re_BufSz   + 1  ! g
   Re_BufSz    = Re_BufSz    + SIZE( InData%TP_RefPoint )  ! TP_RefPoint 
   Re_BufSz   = Re_BufSz   + 1  ! SubRotateZ
-  Re_BufSz   = Re_BufSz   + 1  ! DT
+  Db_BufSz   = Db_BufSz   + 1  ! DT
   Int_BufSz  = Int_BufSz  + 1  ! ErrStat
   Int_BufSz  = Int_BufSz  + 1  ! NJoints
   Int_BufSz  = Int_BufSz  + 1  ! JointsCol
@@ -1048,6 +1356,7 @@ ENDIF
   Int_BufSz   = Int_BufSz   + SIZE( InData%MemberNodes )  ! MemberNodes 
   Int_BufSz   = Int_BufSz   + SIZE( InData%NodesConnN )  ! NodesConnN 
   Int_BufSz   = Int_BufSz   + SIZE( InData%NodesConnE )  ! NodesConnE 
+  Int_BufSz  = Int_BufSz  + 1  ! UnSum
   IF ( Re_BufSz  .GT. 0 ) ALLOCATE( ReKiBuf(  Re_BufSz  ) )
   IF ( Db_BufSz  .GT. 0 ) ALLOCATE( DbKiBuf(  Db_BufSz  ) )
   IF ( Int_BufSz .GT. 0 ) ALLOCATE( IntKiBuf( Int_BufSz ) )
@@ -1057,8 +1366,8 @@ ENDIF
   Re_Xferred   = Re_Xferred   + SIZE(InData%TP_RefPoint)
   IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(1)-1 ) =  (InData%SubRotateZ )
   Re_Xferred   = Re_Xferred   + 1
-  IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(1)-1 ) =  (InData%DT )
-  Re_Xferred   = Re_Xferred   + 1
+  IF ( .NOT. OnlySize ) DbKiBuf ( Db_Xferred:Db_Xferred+(1)-1 ) =  (InData%DT )
+  Db_Xferred   = Db_Xferred   + 1
   IF ( .NOT. OnlySize ) IntKiBuf ( Int_Xferred:Int_Xferred+(1)-1 ) = (InData%ErrStat )
   Int_Xferred   = Int_Xferred   + 1
   IF ( .NOT. OnlySize ) IntKiBuf ( Int_Xferred:Int_Xferred+(1)-1 ) = (InData%NJoints )
@@ -1183,6 +1492,8 @@ ENDIF
     IF ( .NOT. OnlySize ) IntKiBuf ( Int_Xferred:Int_Xferred+(SIZE(InData%NodesConnE))-1 ) = PACK(InData%NodesConnE ,.TRUE.)
     Int_Xferred   = Int_Xferred   + SIZE(InData%NodesConnE)
   ENDIF
+  IF ( .NOT. OnlySize ) IntKiBuf ( Int_Xferred:Int_Xferred+(1)-1 ) = (InData%UnSum )
+  Int_Xferred   = Int_Xferred   + 1
  END SUBROUTINE SD_PackInitInput
 
  SUBROUTINE SD_UnPackInitInput( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
@@ -1226,8 +1537,8 @@ ENDIF
   Re_Xferred   = Re_Xferred   + SIZE(OutData%TP_RefPoint)
   OutData%SubRotateZ = ReKiBuf ( Re_Xferred )
   Re_Xferred   = Re_Xferred   + 1
-  OutData%DT = ReKiBuf ( Re_Xferred )
-  Re_Xferred   = Re_Xferred   + 1
+  OutData%DT = DbKiBuf ( Db_Xferred )
+  Db_Xferred   = Db_Xferred   + 1
   OutData%ErrStat = IntKiBuf ( Int_Xferred )
   Int_Xferred   = Int_Xferred   + 1
   OutData%NJoints = IntKiBuf ( Int_Xferred )
@@ -1392,40 +1703,68 @@ ENDIF
   DEALLOCATE(mask2)
     Int_Xferred   = Int_Xferred   + SIZE(OutData%NodesConnE)
   ENDIF
+  OutData%UnSum = IntKiBuf ( Int_Xferred )
+  Int_Xferred   = Int_Xferred   + 1
   Re_Xferred   = Re_Xferred-1
   Db_Xferred   = Db_Xferred-1
   Int_Xferred  = Int_Xferred-1
  END SUBROUTINE SD_UnPackInitInput
 
  SUBROUTINE SD_CopyInitOutput( SrcInitOutputData, DstInitOutputData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(SD_initoutputtype), INTENT(INOUT) :: SrcInitOutputData
-  TYPE(SD_initoutputtype), INTENT(INOUT) :: DstInitOutputData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(SD_initoutputtype), INTENT(INOUT) :: SrcInitOutputData
+   TYPE(SD_initoutputtype), INTENT(INOUT) :: DstInitOutputData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-IF ( ALLOCATED( SrcInitOutputData%WriteOutputHdr ) ) THEN
-  i1 = SIZE(SrcInitOutputData%WriteOutputHdr,1)
-  IF (.NOT.ALLOCATED(DstInitOutputData%WriteOutputHdr)) ALLOCATE(DstInitOutputData%WriteOutputHdr(i1))
-  DstInitOutputData%WriteOutputHdr = SrcInitOutputData%WriteOutputHdr
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+IF (ALLOCATED(SrcInitOutputData%WriteOutputHdr)) THEN
+   i1_l = LBOUND(SrcInitOutputData%WriteOutputHdr,1)
+   i1_u = UBOUND(SrcInitOutputData%WriteOutputHdr,1)
+   IF (.NOT.ALLOCATED(DstInitOutputData%WriteOutputHdr)) THEN 
+      ALLOCATE(DstInitOutputData%WriteOutputHdr(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitOutput: Error allocating DstInitOutputData%WriteOutputHdr.'
+         RETURN
+      END IF
+   END IF
+   DstInitOutputData%WriteOutputHdr = SrcInitOutputData%WriteOutputHdr
 ENDIF
-IF ( ALLOCATED( SrcInitOutputData%WriteOutputUnt ) ) THEN
-  i1 = SIZE(SrcInitOutputData%WriteOutputUnt,1)
-  IF (.NOT.ALLOCATED(DstInitOutputData%WriteOutputUnt)) ALLOCATE(DstInitOutputData%WriteOutputUnt(i1))
-  DstInitOutputData%WriteOutputUnt = SrcInitOutputData%WriteOutputUnt
+IF (ALLOCATED(SrcInitOutputData%WriteOutputUnt)) THEN
+   i1_l = LBOUND(SrcInitOutputData%WriteOutputUnt,1)
+   i1_u = UBOUND(SrcInitOutputData%WriteOutputUnt,1)
+   IF (.NOT.ALLOCATED(DstInitOutputData%WriteOutputUnt)) THEN 
+      ALLOCATE(DstInitOutputData%WriteOutputUnt(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitOutput: Error allocating DstInitOutputData%WriteOutputUnt.'
+         RETURN
+      END IF
+   END IF
+   DstInitOutputData%WriteOutputUnt = SrcInitOutputData%WriteOutputUnt
 ENDIF
-  DstInitOutputData%MaxOutChs = SrcInitOutputData%MaxOutChs
-  DstInitOutputData%TabDelim = SrcInitOutputData%TabDelim
-  DstInitOutputData%OutCOSM = SrcInitOutputData%OutCOSM
-  DstInitOutputData%SSSum = SrcInitOutputData%SSSum
-IF ( ALLOCATED( SrcInitOutputData%SSOutList ) ) THEN
-  i1 = SIZE(SrcInitOutputData%SSOutList,1)
-  IF (.NOT.ALLOCATED(DstInitOutputData%SSOutList)) ALLOCATE(DstInitOutputData%SSOutList(i1))
-  DstInitOutputData%SSOutList = SrcInitOutputData%SSOutList
+      CALL NWTC_Library_Copyprogdesc( SrcInitOutputData%Ver, DstInitOutputData%Ver, CtrlCode, ErrStat, ErrMsg )
+   DstInitOutputData%MaxOutChs = SrcInitOutputData%MaxOutChs
+   DstInitOutputData%TabDelim = SrcInitOutputData%TabDelim
+   DstInitOutputData%OutCOSM = SrcInitOutputData%OutCOSM
+IF (ALLOCATED(SrcInitOutputData%SSOutList)) THEN
+   i1_l = LBOUND(SrcInitOutputData%SSOutList,1)
+   i1_u = UBOUND(SrcInitOutputData%SSOutList,1)
+   IF (.NOT.ALLOCATED(DstInitOutputData%SSOutList)) THEN 
+      ALLOCATE(DstInitOutputData%SSOutList(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyInitOutput: Error allocating DstInitOutputData%SSOutList.'
+         RETURN
+      END IF
+   END IF
+   DstInitOutputData%SSOutList = SrcInitOutputData%SSOutList
 ENDIF
  END SUBROUTINE SD_CopyInitOutput
 
@@ -1437,9 +1776,16 @@ ENDIF
 ! 
   ErrStat = ErrID_None
   ErrMsg  = ""
-  IF ( ALLOCATED(InitOutputData%WriteOutputHdr) ) DEALLOCATE(InitOutputData%WriteOutputHdr)
-  IF ( ALLOCATED(InitOutputData%WriteOutputUnt) ) DEALLOCATE(InitOutputData%WriteOutputUnt)
-  IF ( ALLOCATED(InitOutputData%SSOutList) ) DEALLOCATE(InitOutputData%SSOutList)
+IF (ALLOCATED(InitOutputData%WriteOutputHdr)) THEN
+   DEALLOCATE(InitOutputData%WriteOutputHdr)
+ENDIF
+IF (ALLOCATED(InitOutputData%WriteOutputUnt)) THEN
+   DEALLOCATE(InitOutputData%WriteOutputUnt)
+ENDIF
+  CALL NWTC_Library_Destroyprogdesc( InitOutputData%Ver, ErrStat, ErrMsg )
+IF (ALLOCATED(InitOutputData%SSOutList)) THEN
+   DEALLOCATE(InitOutputData%SSOutList)
+ENDIF
  END SUBROUTINE SD_DestroyInitOutput
 
  SUBROUTINE SD_PackInitOutput( ReKiBuf, DbKiBuf, IntKiBuf, Indata, ErrStat, ErrMsg, SizeOnly )
@@ -1463,6 +1809,9 @@ ENDIF
   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5     
   LOGICAL                        :: OnlySize ! if present and true, do not pack, just allocate buffers
  ! buffers to store meshes, if any
+  REAL(ReKi),     ALLOCATABLE :: Re_Ver_Buf(:)
+  REAL(DbKi),     ALLOCATABLE :: Db_Ver_Buf(:)
+  INTEGER(IntKi), ALLOCATABLE :: Int_Ver_Buf(:)
   OnlySize = .FALSE.
   IF ( PRESENT(SizeOnly) ) THEN
     OnlySize = SizeOnly
@@ -1476,10 +1825,33 @@ ENDIF
   Re_BufSz  = 0
   Db_BufSz  = 0
   Int_BufSz  = 0
+  CALL NWTC_Library_Packprogdesc( Re_Ver_Buf, Db_Ver_Buf, Int_Ver_Buf, InData%Ver, ErrStat, ErrMsg, .TRUE. ) ! Ver 
+  IF(ALLOCATED(Re_Ver_Buf)) Re_BufSz  = Re_BufSz  + SIZE( Re_Ver_Buf  ) ! Ver
+  IF(ALLOCATED(Db_Ver_Buf)) Db_BufSz  = Db_BufSz  + SIZE( Db_Ver_Buf  ) ! Ver
+  IF(ALLOCATED(Int_Ver_Buf))Int_BufSz = Int_BufSz + SIZE( Int_Ver_Buf ) ! Ver
+  IF(ALLOCATED(Re_Ver_Buf))  DEALLOCATE(Re_Ver_Buf)
+  IF(ALLOCATED(Db_Ver_Buf))  DEALLOCATE(Db_Ver_Buf)
+  IF(ALLOCATED(Int_Ver_Buf)) DEALLOCATE(Int_Ver_Buf)
   Int_BufSz  = Int_BufSz  + 1  ! MaxOutChs
   IF ( Re_BufSz  .GT. 0 ) ALLOCATE( ReKiBuf(  Re_BufSz  ) )
   IF ( Db_BufSz  .GT. 0 ) ALLOCATE( DbKiBuf(  Db_BufSz  ) )
   IF ( Int_BufSz .GT. 0 ) ALLOCATE( IntKiBuf( Int_BufSz ) )
+  CALL NWTC_Library_Packprogdesc( Re_Ver_Buf, Db_Ver_Buf, Int_Ver_Buf, InData%Ver, ErrStat, ErrMsg, OnlySize ) ! Ver 
+  IF(ALLOCATED(Re_Ver_Buf)) THEN
+    IF ( .NOT. OnlySize ) ReKiBuf( Re_Xferred:Re_Xferred+SIZE(Re_Ver_Buf)-1 ) = Re_Ver_Buf
+    Re_Xferred = Re_Xferred + SIZE(Re_Ver_Buf)
+  ENDIF
+  IF(ALLOCATED(Db_Ver_Buf)) THEN
+    IF ( .NOT. OnlySize ) DbKiBuf( Db_Xferred:Db_Xferred+SIZE(Db_Ver_Buf)-1 ) = Db_Ver_Buf
+    Db_Xferred = Db_Xferred + SIZE(Db_Ver_Buf)
+  ENDIF
+  IF(ALLOCATED(Int_Ver_Buf)) THEN
+    IF ( .NOT. OnlySize ) IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_Ver_Buf)-1 ) = Int_Ver_Buf
+    Int_Xferred = Int_Xferred + SIZE(Int_Ver_Buf)
+  ENDIF
+  IF( ALLOCATED(Re_Ver_Buf) )  DEALLOCATE(Re_Ver_Buf)
+  IF( ALLOCATED(Db_Ver_Buf) )  DEALLOCATE(Db_Ver_Buf)
+  IF( ALLOCATED(Int_Ver_Buf) ) DEALLOCATE(Int_Ver_Buf)
   IF ( .NOT. OnlySize ) IntKiBuf ( Int_Xferred:Int_Xferred+(1)-1 ) = (InData%MaxOutChs )
   Int_Xferred   = Int_Xferred   + 1
  END SUBROUTINE SD_PackInitOutput
@@ -1508,6 +1880,9 @@ ENDIF
   LOGICAL, ALLOCATABLE           :: mask4(:,:,:,:)
   LOGICAL, ALLOCATABLE           :: mask5(:,:,:,:,:)
  ! buffers to store meshes, if any
+  REAL(ReKi),    ALLOCATABLE :: Re_Ver_Buf(:)
+  REAL(DbKi),    ALLOCATABLE :: Db_Ver_Buf(:)
+  INTEGER(IntKi),    ALLOCATABLE :: Int_Ver_Buf(:)
     !
   ErrStat = ErrID_None
   ErrMsg  = ""
@@ -1517,6 +1892,21 @@ ENDIF
   Re_BufSz  = 0
   Db_BufSz  = 0
   Int_BufSz  = 0
+ ! first call NWTC_Library_Packprogdesc to get correctly sized buffers for unpacking
+  CALL NWTC_Library_Packprogdesc( Re_Ver_Buf, Db_Ver_Buf, Int_Ver_Buf, OutData%Ver, ErrStat, ErrMsg, .TRUE. ) ! Ver 
+  IF(ALLOCATED(Re_Ver_Buf)) THEN
+    Re_Ver_Buf = ReKiBuf( Re_Xferred:Re_Xferred+SIZE(Re_Ver_Buf)-1 )
+    Re_Xferred = Re_Xferred + SIZE(Re_Ver_Buf)
+  ENDIF
+  IF(ALLOCATED(Db_Ver_Buf)) THEN
+    Db_Ver_Buf = DbKiBuf( Db_Xferred:Db_Xferred+SIZE(Db_Ver_Buf)-1 )
+    Db_Xferred = Db_Xferred + SIZE(Db_Ver_Buf)
+  ENDIF
+  IF(ALLOCATED(Int_Ver_Buf)) THEN
+    Int_Ver_Buf = IntKiBuf( Int_Xferred:Int_Xferred+SIZE(Int_Ver_Buf)-1 )
+    Int_Xferred = Int_Xferred + SIZE(Int_Ver_Buf)
+  ENDIF
+  CALL NWTC_Library_UnPackprogdesc( Re_Ver_Buf, Db_Ver_Buf, Int_Ver_Buf, OutData%Ver, ErrStat, ErrMsg ) ! Ver 
   OutData%MaxOutChs = IntKiBuf ( Int_Xferred )
   Int_Xferred   = Int_Xferred   + 1
   Re_Xferred   = Re_Xferred-1
@@ -1525,31 +1915,57 @@ ENDIF
  END SUBROUTINE SD_UnPackInitOutput
 
  SUBROUTINE SD_CopyContState( SrcContStateData, DstContStateData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(SD_continuousstatetype), INTENT(INOUT) :: SrcContStateData
-  TYPE(SD_continuousstatetype), INTENT(INOUT) :: DstContStateData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(SD_continuousstatetype), INTENT(INOUT) :: SrcContStateData
+   TYPE(SD_continuousstatetype), INTENT(INOUT) :: DstContStateData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  DstContStateData%DummyContState = SrcContStateData%DummyContState
-IF ( ALLOCATED( SrcContStateData%qm ) ) THEN
-  i1 = SIZE(SrcContStateData%qm,1)
-  IF (.NOT.ALLOCATED(DstContStateData%qm)) ALLOCATE(DstContStateData%qm(i1))
-  DstContStateData%qm = SrcContStateData%qm
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+   DstContStateData%DummyContState = SrcContStateData%DummyContState
+IF (ALLOCATED(SrcContStateData%qm)) THEN
+   i1_l = LBOUND(SrcContStateData%qm,1)
+   i1_u = UBOUND(SrcContStateData%qm,1)
+   IF (.NOT.ALLOCATED(DstContStateData%qm)) THEN 
+      ALLOCATE(DstContStateData%qm(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyContState: Error allocating DstContStateData%qm.'
+         RETURN
+      END IF
+   END IF
+   DstContStateData%qm = SrcContStateData%qm
 ENDIF
-IF ( ALLOCATED( SrcContStateData%qmdot ) ) THEN
-  i1 = SIZE(SrcContStateData%qmdot,1)
-  IF (.NOT.ALLOCATED(DstContStateData%qmdot)) ALLOCATE(DstContStateData%qmdot(i1))
-  DstContStateData%qmdot = SrcContStateData%qmdot
+IF (ALLOCATED(SrcContStateData%qmdot)) THEN
+   i1_l = LBOUND(SrcContStateData%qmdot,1)
+   i1_u = UBOUND(SrcContStateData%qmdot,1)
+   IF (.NOT.ALLOCATED(DstContStateData%qmdot)) THEN 
+      ALLOCATE(DstContStateData%qmdot(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyContState: Error allocating DstContStateData%qmdot.'
+         RETURN
+      END IF
+   END IF
+   DstContStateData%qmdot = SrcContStateData%qmdot
 ENDIF
-IF ( ALLOCATED( SrcContStateData%qmdotdot ) ) THEN
-  i1 = SIZE(SrcContStateData%qmdotdot,1)
-  IF (.NOT.ALLOCATED(DstContStateData%qmdotdot)) ALLOCATE(DstContStateData%qmdotdot(i1))
-  DstContStateData%qmdotdot = SrcContStateData%qmdotdot
+IF (ALLOCATED(SrcContStateData%qmdotdot)) THEN
+   i1_l = LBOUND(SrcContStateData%qmdotdot,1)
+   i1_u = UBOUND(SrcContStateData%qmdotdot,1)
+   IF (.NOT.ALLOCATED(DstContStateData%qmdotdot)) THEN 
+      ALLOCATE(DstContStateData%qmdotdot(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyContState: Error allocating DstContStateData%qmdotdot.'
+         RETURN
+      END IF
+   END IF
+   DstContStateData%qmdotdot = SrcContStateData%qmdotdot
 ENDIF
  END SUBROUTINE SD_CopyContState
 
@@ -1561,9 +1977,15 @@ ENDIF
 ! 
   ErrStat = ErrID_None
   ErrMsg  = ""
-  IF ( ALLOCATED(ContStateData%qm) ) DEALLOCATE(ContStateData%qm)
-  IF ( ALLOCATED(ContStateData%qmdot) ) DEALLOCATE(ContStateData%qmdot)
-  IF ( ALLOCATED(ContStateData%qmdotdot) ) DEALLOCATE(ContStateData%qmdotdot)
+IF (ALLOCATED(ContStateData%qm)) THEN
+   DEALLOCATE(ContStateData%qm)
+ENDIF
+IF (ALLOCATED(ContStateData%qmdot)) THEN
+   DEALLOCATE(ContStateData%qmdot)
+ENDIF
+IF (ALLOCATED(ContStateData%qmdotdot)) THEN
+   DEALLOCATE(ContStateData%qmdotdot)
+ENDIF
  END SUBROUTINE SD_DestroyContState
 
  SUBROUTINE SD_PackContState( ReKiBuf, DbKiBuf, IntKiBuf, Indata, ErrStat, ErrMsg, SizeOnly )
@@ -1682,17 +2104,19 @@ ENDIF
  END SUBROUTINE SD_UnPackContState
 
  SUBROUTINE SD_CopyDiscState( SrcDiscStateData, DstDiscStateData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(SD_discretestatetype), INTENT(INOUT) :: SrcDiscStateData
-  TYPE(SD_discretestatetype), INTENT(INOUT) :: DstDiscStateData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(SD_discretestatetype), INTENT(INOUT) :: SrcDiscStateData
+   TYPE(SD_discretestatetype), INTENT(INOUT) :: DstDiscStateData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  DstDiscStateData%DummyDiscState = SrcDiscStateData%DummyDiscState
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+   DstDiscStateData%DummyDiscState = SrcDiscStateData%DummyDiscState
  END SUBROUTINE SD_CopyDiscState
 
  SUBROUTINE SD_DestroyDiscState( DiscStateData, ErrStat, ErrMsg )
@@ -1788,17 +2212,19 @@ ENDIF
  END SUBROUTINE SD_UnPackDiscState
 
  SUBROUTINE SD_CopyConstrState( SrcConstrStateData, DstConstrStateData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(SD_constraintstatetype), INTENT(INOUT) :: SrcConstrStateData
-  TYPE(SD_constraintstatetype), INTENT(INOUT) :: DstConstrStateData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(SD_constraintstatetype), INTENT(INOUT) :: SrcConstrStateData
+   TYPE(SD_constraintstatetype), INTENT(INOUT) :: DstConstrStateData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  DstConstrStateData%DummyConstrState = SrcConstrStateData%DummyConstrState
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+   DstConstrStateData%DummyConstrState = SrcConstrStateData%DummyConstrState
  END SUBROUTINE SD_CopyConstrState
 
  SUBROUTINE SD_DestroyConstrState( ConstrStateData, ErrStat, ErrMsg )
@@ -1894,29 +2320,59 @@ ENDIF
  END SUBROUTINE SD_UnPackConstrState
 
  SUBROUTINE SD_CopyOtherState( SrcOtherStateData, DstOtherStateData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(SD_otherstatetype), INTENT(INOUT) :: SrcOtherStateData
-  TYPE(SD_otherstatetype), INTENT(INOUT) :: DstOtherStateData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(SD_otherstatetype), INTENT(INOUT) :: SrcOtherStateData
+   TYPE(SD_otherstatetype), INTENT(INOUT) :: DstOtherStateData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-DO i1 = 1, SIZE(SrcOtherStateData%xdot,1)
-  CALL SD_CopyContState( SrcOtherStateData%xdot(i1), DstOtherStateData%xdot(i1), CtrlCode, ErrStat, ErrMsg )
-ENDDO
-  DstOtherStateData%n = SrcOtherStateData%n
-IF ( ALLOCATED( SrcOtherStateData%Udotdot ) ) THEN
-  i1 = SIZE(SrcOtherStateData%Udotdot,1)
-  IF (.NOT.ALLOCATED(DstOtherStateData%Udotdot)) ALLOCATE(DstOtherStateData%Udotdot(i1))
-  DstOtherStateData%Udotdot = SrcOtherStateData%Udotdot
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+IF (ALLOCATED(SrcOtherStateData%xdot)) THEN
+   i1_l = LBOUND(SrcOtherStateData%xdot,1)
+   i1_u = UBOUND(SrcOtherStateData%xdot,1)
+   IF (.NOT.ALLOCATED(DstOtherStateData%xdot)) THEN 
+      ALLOCATE(DstOtherStateData%xdot(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyOtherState: Error allocating DstOtherStateData%xdot.'
+         RETURN
+      END IF
+   END IF
+   DO i1 = LBOUND(SrcOtherStateData%xdot,1), UBOUND(SrcOtherStateData%xdot,1)
+      CALL SD_CopyContState( SrcOtherStateData%xdot(i1), DstOtherStateData%xdot(i1), CtrlCode, ErrStat, ErrMsg )
+   ENDDO
 ENDIF
-IF ( ALLOCATED( SrcOtherStateData%Y2 ) ) THEN
-  i1 = SIZE(SrcOtherStateData%Y2,1)
-  IF (.NOT.ALLOCATED(DstOtherStateData%Y2)) ALLOCATE(DstOtherStateData%Y2(i1))
-  DstOtherStateData%Y2 = SrcOtherStateData%Y2
+   DstOtherStateData%n = SrcOtherStateData%n
+IF (ALLOCATED(SrcOtherStateData%Udotdot)) THEN
+   i1_l = LBOUND(SrcOtherStateData%Udotdot,1)
+   i1_u = UBOUND(SrcOtherStateData%Udotdot,1)
+   IF (.NOT.ALLOCATED(DstOtherStateData%Udotdot)) THEN 
+      ALLOCATE(DstOtherStateData%Udotdot(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyOtherState: Error allocating DstOtherStateData%Udotdot.'
+         RETURN
+      END IF
+   END IF
+   DstOtherStateData%Udotdot = SrcOtherStateData%Udotdot
+ENDIF
+IF (ALLOCATED(SrcOtherStateData%Y2)) THEN
+   i1_l = LBOUND(SrcOtherStateData%Y2,1)
+   i1_u = UBOUND(SrcOtherStateData%Y2,1)
+   IF (.NOT.ALLOCATED(DstOtherStateData%Y2)) THEN 
+      ALLOCATE(DstOtherStateData%Y2(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyOtherState: Error allocating DstOtherStateData%Y2.'
+         RETURN
+      END IF
+   END IF
+   DstOtherStateData%Y2 = SrcOtherStateData%Y2
 ENDIF
  END SUBROUTINE SD_CopyOtherState
 
@@ -1929,12 +2385,17 @@ ENDIF
   ErrStat = ErrID_None
   ErrMsg  = ""
 IF (ALLOCATED(OtherStateData%xdot)) THEN
-DO i1 = 1, SIZE(OtherStateData%xdot,1)
+DO i1 = LBOUND(OtherStateData%xdot,1), UBOUND(OtherStateData%xdot,1)
   CALL SD_DestroyContState( OtherStateData%xdot(i1), ErrStat, ErrMsg )
 ENDDO
+   DEALLOCATE(OtherStateData%xdot)
 ENDIF
-  IF ( ALLOCATED(OtherStateData%Udotdot) ) DEALLOCATE(OtherStateData%Udotdot)
-  IF ( ALLOCATED(OtherStateData%Y2) ) DEALLOCATE(OtherStateData%Y2)
+IF (ALLOCATED(OtherStateData%Udotdot)) THEN
+   DEALLOCATE(OtherStateData%Udotdot)
+ENDIF
+IF (ALLOCATED(OtherStateData%Y2)) THEN
+   DEALLOCATE(OtherStateData%Y2)
+ENDIF
  END SUBROUTINE SD_DestroyOtherState
 
  SUBROUTINE SD_PackOtherState( ReKiBuf, DbKiBuf, IntKiBuf, Indata, ErrStat, ErrMsg, SizeOnly )
@@ -1974,7 +2435,7 @@ ENDIF
   Re_BufSz  = 0
   Db_BufSz  = 0
   Int_BufSz  = 0
-DO i1 = 1, SIZE(InData%xdot,1)
+DO i1 = LBOUND(InData%xdot,1), UBOUND(InData%xdot,1)
   CALL SD_PackContState( Re_xdot_Buf, Db_xdot_Buf, Int_xdot_Buf, InData%xdot(i1), ErrStat, ErrMsg, .TRUE. ) ! xdot 
   IF(ALLOCATED(Re_xdot_Buf)) Re_BufSz  = Re_BufSz  + SIZE( Re_xdot_Buf  ) ! xdot
   IF(ALLOCATED(Db_xdot_Buf)) Db_BufSz  = Db_BufSz  + SIZE( Db_xdot_Buf  ) ! xdot
@@ -1989,7 +2450,7 @@ ENDDO
   IF ( Re_BufSz  .GT. 0 ) ALLOCATE( ReKiBuf(  Re_BufSz  ) )
   IF ( Db_BufSz  .GT. 0 ) ALLOCATE( DbKiBuf(  Db_BufSz  ) )
   IF ( Int_BufSz .GT. 0 ) ALLOCATE( IntKiBuf( Int_BufSz ) )
-DO i1 = 1, SIZE(InData%xdot,1)
+DO i1 = LBOUND(InData%xdot,1), UBOUND(InData%xdot,1)
   CALL SD_PackContState( Re_xdot_Buf, Db_xdot_Buf, Int_xdot_Buf, InData%xdot(i1), ErrStat, ErrMsg, OnlySize ) ! xdot 
   IF(ALLOCATED(Re_xdot_Buf)) THEN
     IF ( .NOT. OnlySize ) ReKiBuf( Re_Xferred:Re_Xferred+SIZE(Re_xdot_Buf)-1 ) = Re_xdot_Buf
@@ -2055,7 +2516,7 @@ ENDDO
   Re_BufSz  = 0
   Db_BufSz  = 0
   Int_BufSz  = 0
-DO i1 = 1, SIZE(OutData%xdot,1)
+DO i1 = LBOUND(OutData%xdot,1), UBOUND(OutData%xdot,1)
  ! first call SD_PackContState to get correctly sized buffers for unpacking
   CALL SD_PackContState( Re_xdot_Buf, Db_xdot_Buf, Int_xdot_Buf, OutData%xdot(i1), ErrStat, ErrMsg, .TRUE. ) ! xdot 
   IF(ALLOCATED(Re_xdot_Buf)) THEN
@@ -2092,20 +2553,22 @@ ENDDO
  END SUBROUTINE SD_UnPackOtherState
 
  SUBROUTINE SD_Copyoutvar_type( Srcoutvar_typeData, Dstoutvar_typeData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(sd_outvar_type), INTENT(INOUT) :: Srcoutvar_typeData
-  TYPE(sd_outvar_type), INTENT(INOUT) :: Dstoutvar_typeData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(sd_outvar_type), INTENT(INOUT) :: Srcoutvar_typeData
+   TYPE(sd_outvar_type), INTENT(INOUT) :: Dstoutvar_typeData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  Dstoutvar_typeData%Indx = Srcoutvar_typeData%Indx
-  Dstoutvar_typeData%SignM = Srcoutvar_typeData%SignM
-  Dstoutvar_typeData%Units = Srcoutvar_typeData%Units
-  Dstoutvar_typeData%Name = Srcoutvar_typeData%Name
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+   Dstoutvar_typeData%Indx = Srcoutvar_typeData%Indx
+   Dstoutvar_typeData%SignM = Srcoutvar_typeData%SignM
+   Dstoutvar_typeData%Units = Srcoutvar_typeData%Units
+   Dstoutvar_typeData%Name = Srcoutvar_typeData%Name
  END SUBROUTINE SD_Copyoutvar_type
 
  SUBROUTINE SD_Destroyoutvar_type( outvar_typeData, ErrStat, ErrMsg )
@@ -2206,272 +2669,649 @@ ENDDO
  END SUBROUTINE SD_UnPackoutvar_type
 
  SUBROUTINE SD_CopyParam( SrcParamData, DstParamData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(SD_parametertype), INTENT(INOUT) :: SrcParamData
-  TYPE(SD_parametertype), INTENT(INOUT) :: DstParamData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(SD_parametertype), INTENT(INOUT) :: SrcParamData
+   TYPE(SD_parametertype), INTENT(INOUT) :: DstParamData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-IF ( ALLOCATED( SrcParamData%A_21 ) ) THEN
-  i1 = SIZE(SrcParamData%A_21,1)
-  i2 = SIZE(SrcParamData%A_21,2)
-  IF (.NOT.ALLOCATED(DstParamData%A_21)) ALLOCATE(DstParamData%A_21(i1,i2))
-  DstParamData%A_21 = SrcParamData%A_21
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+IF (ALLOCATED(SrcParamData%A_21)) THEN
+   i1_l = LBOUND(SrcParamData%A_21,1)
+   i1_u = UBOUND(SrcParamData%A_21,1)
+   i2_l = LBOUND(SrcParamData%A_21,2)
+   i2_u = UBOUND(SrcParamData%A_21,2)
+   IF (.NOT.ALLOCATED(DstParamData%A_21)) THEN 
+      ALLOCATE(DstParamData%A_21(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%A_21.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%A_21 = SrcParamData%A_21
 ENDIF
-IF ( ALLOCATED( SrcParamData%A_22 ) ) THEN
-  i1 = SIZE(SrcParamData%A_22,1)
-  i2 = SIZE(SrcParamData%A_22,2)
-  IF (.NOT.ALLOCATED(DstParamData%A_22)) ALLOCATE(DstParamData%A_22(i1,i2))
-  DstParamData%A_22 = SrcParamData%A_22
+IF (ALLOCATED(SrcParamData%A_22)) THEN
+   i1_l = LBOUND(SrcParamData%A_22,1)
+   i1_u = UBOUND(SrcParamData%A_22,1)
+   i2_l = LBOUND(SrcParamData%A_22,2)
+   i2_u = UBOUND(SrcParamData%A_22,2)
+   IF (.NOT.ALLOCATED(DstParamData%A_22)) THEN 
+      ALLOCATE(DstParamData%A_22(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%A_22.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%A_22 = SrcParamData%A_22
 ENDIF
-IF ( ALLOCATED( SrcParamData%B_23 ) ) THEN
-  i1 = SIZE(SrcParamData%B_23,1)
-  i2 = SIZE(SrcParamData%B_23,2)
-  IF (.NOT.ALLOCATED(DstParamData%B_23)) ALLOCATE(DstParamData%B_23(i1,i2))
-  DstParamData%B_23 = SrcParamData%B_23
+IF (ALLOCATED(SrcParamData%B_23)) THEN
+   i1_l = LBOUND(SrcParamData%B_23,1)
+   i1_u = UBOUND(SrcParamData%B_23,1)
+   i2_l = LBOUND(SrcParamData%B_23,2)
+   i2_u = UBOUND(SrcParamData%B_23,2)
+   IF (.NOT.ALLOCATED(DstParamData%B_23)) THEN 
+      ALLOCATE(DstParamData%B_23(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%B_23.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%B_23 = SrcParamData%B_23
 ENDIF
-IF ( ALLOCATED( SrcParamData%B_24 ) ) THEN
-  i1 = SIZE(SrcParamData%B_24,1)
-  i2 = SIZE(SrcParamData%B_24,2)
-  IF (.NOT.ALLOCATED(DstParamData%B_24)) ALLOCATE(DstParamData%B_24(i1,i2))
-  DstParamData%B_24 = SrcParamData%B_24
+IF (ALLOCATED(SrcParamData%B_24)) THEN
+   i1_l = LBOUND(SrcParamData%B_24,1)
+   i1_u = UBOUND(SrcParamData%B_24,1)
+   i2_l = LBOUND(SrcParamData%B_24,2)
+   i2_u = UBOUND(SrcParamData%B_24,2)
+   IF (.NOT.ALLOCATED(DstParamData%B_24)) THEN 
+      ALLOCATE(DstParamData%B_24(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%B_24.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%B_24 = SrcParamData%B_24
 ENDIF
-IF ( ALLOCATED( SrcParamData%FX ) ) THEN
-  i1 = SIZE(SrcParamData%FX,1)
-  IF (.NOT.ALLOCATED(DstParamData%FX)) ALLOCATE(DstParamData%FX(i1))
-  DstParamData%FX = SrcParamData%FX
+IF (ALLOCATED(SrcParamData%FX)) THEN
+   i1_l = LBOUND(SrcParamData%FX,1)
+   i1_u = UBOUND(SrcParamData%FX,1)
+   IF (.NOT.ALLOCATED(DstParamData%FX)) THEN 
+      ALLOCATE(DstParamData%FX(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%FX.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%FX = SrcParamData%FX
 ENDIF
-IF ( ALLOCATED( SrcParamData%C1_11 ) ) THEN
-  i1 = SIZE(SrcParamData%C1_11,1)
-  i2 = SIZE(SrcParamData%C1_11,2)
-  IF (.NOT.ALLOCATED(DstParamData%C1_11)) ALLOCATE(DstParamData%C1_11(i1,i2))
-  DstParamData%C1_11 = SrcParamData%C1_11
+IF (ALLOCATED(SrcParamData%C1_11)) THEN
+   i1_l = LBOUND(SrcParamData%C1_11,1)
+   i1_u = UBOUND(SrcParamData%C1_11,1)
+   i2_l = LBOUND(SrcParamData%C1_11,2)
+   i2_u = UBOUND(SrcParamData%C1_11,2)
+   IF (.NOT.ALLOCATED(DstParamData%C1_11)) THEN 
+      ALLOCATE(DstParamData%C1_11(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%C1_11.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%C1_11 = SrcParamData%C1_11
 ENDIF
-IF ( ALLOCATED( SrcParamData%C1_12 ) ) THEN
-  i1 = SIZE(SrcParamData%C1_12,1)
-  i2 = SIZE(SrcParamData%C1_12,2)
-  IF (.NOT.ALLOCATED(DstParamData%C1_12)) ALLOCATE(DstParamData%C1_12(i1,i2))
-  DstParamData%C1_12 = SrcParamData%C1_12
+IF (ALLOCATED(SrcParamData%C1_12)) THEN
+   i1_l = LBOUND(SrcParamData%C1_12,1)
+   i1_u = UBOUND(SrcParamData%C1_12,1)
+   i2_l = LBOUND(SrcParamData%C1_12,2)
+   i2_u = UBOUND(SrcParamData%C1_12,2)
+   IF (.NOT.ALLOCATED(DstParamData%C1_12)) THEN 
+      ALLOCATE(DstParamData%C1_12(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%C1_12.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%C1_12 = SrcParamData%C1_12
 ENDIF
-IF ( ALLOCATED( SrcParamData%D1_11 ) ) THEN
-  i1 = SIZE(SrcParamData%D1_11,1)
-  i2 = SIZE(SrcParamData%D1_11,2)
-  IF (.NOT.ALLOCATED(DstParamData%D1_11)) ALLOCATE(DstParamData%D1_11(i1,i2))
-  DstParamData%D1_11 = SrcParamData%D1_11
+IF (ALLOCATED(SrcParamData%D1_11)) THEN
+   i1_l = LBOUND(SrcParamData%D1_11,1)
+   i1_u = UBOUND(SrcParamData%D1_11,1)
+   i2_l = LBOUND(SrcParamData%D1_11,2)
+   i2_u = UBOUND(SrcParamData%D1_11,2)
+   IF (.NOT.ALLOCATED(DstParamData%D1_11)) THEN 
+      ALLOCATE(DstParamData%D1_11(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%D1_11.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%D1_11 = SrcParamData%D1_11
 ENDIF
-IF ( ALLOCATED( SrcParamData%D1_13 ) ) THEN
-  i1 = SIZE(SrcParamData%D1_13,1)
-  i2 = SIZE(SrcParamData%D1_13,2)
-  IF (.NOT.ALLOCATED(DstParamData%D1_13)) ALLOCATE(DstParamData%D1_13(i1,i2))
-  DstParamData%D1_13 = SrcParamData%D1_13
+IF (ALLOCATED(SrcParamData%D1_13)) THEN
+   i1_l = LBOUND(SrcParamData%D1_13,1)
+   i1_u = UBOUND(SrcParamData%D1_13,1)
+   i2_l = LBOUND(SrcParamData%D1_13,2)
+   i2_u = UBOUND(SrcParamData%D1_13,2)
+   IF (.NOT.ALLOCATED(DstParamData%D1_13)) THEN 
+      ALLOCATE(DstParamData%D1_13(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%D1_13.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%D1_13 = SrcParamData%D1_13
 ENDIF
-IF ( ALLOCATED( SrcParamData%D1_14 ) ) THEN
-  i1 = SIZE(SrcParamData%D1_14,1)
-  i2 = SIZE(SrcParamData%D1_14,2)
-  IF (.NOT.ALLOCATED(DstParamData%D1_14)) ALLOCATE(DstParamData%D1_14(i1,i2))
-  DstParamData%D1_14 = SrcParamData%D1_14
+IF (ALLOCATED(SrcParamData%D1_14)) THEN
+   i1_l = LBOUND(SrcParamData%D1_14,1)
+   i1_u = UBOUND(SrcParamData%D1_14,1)
+   i2_l = LBOUND(SrcParamData%D1_14,2)
+   i2_u = UBOUND(SrcParamData%D1_14,2)
+   IF (.NOT.ALLOCATED(DstParamData%D1_14)) THEN 
+      ALLOCATE(DstParamData%D1_14(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%D1_14.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%D1_14 = SrcParamData%D1_14
 ENDIF
-IF ( ALLOCATED( SrcParamData%FY ) ) THEN
-  i1 = SIZE(SrcParamData%FY,1)
-  IF (.NOT.ALLOCATED(DstParamData%FY)) ALLOCATE(DstParamData%FY(i1))
-  DstParamData%FY = SrcParamData%FY
+IF (ALLOCATED(SrcParamData%FY)) THEN
+   i1_l = LBOUND(SrcParamData%FY,1)
+   i1_u = UBOUND(SrcParamData%FY,1)
+   IF (.NOT.ALLOCATED(DstParamData%FY)) THEN 
+      ALLOCATE(DstParamData%FY(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%FY.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%FY = SrcParamData%FY
 ENDIF
-IF ( ALLOCATED( SrcParamData%C2_21 ) ) THEN
-  i1 = SIZE(SrcParamData%C2_21,1)
-  i2 = SIZE(SrcParamData%C2_21,2)
-  IF (.NOT.ALLOCATED(DstParamData%C2_21)) ALLOCATE(DstParamData%C2_21(i1,i2))
-  DstParamData%C2_21 = SrcParamData%C2_21
+IF (ALLOCATED(SrcParamData%C2_21)) THEN
+   i1_l = LBOUND(SrcParamData%C2_21,1)
+   i1_u = UBOUND(SrcParamData%C2_21,1)
+   i2_l = LBOUND(SrcParamData%C2_21,2)
+   i2_u = UBOUND(SrcParamData%C2_21,2)
+   IF (.NOT.ALLOCATED(DstParamData%C2_21)) THEN 
+      ALLOCATE(DstParamData%C2_21(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%C2_21.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%C2_21 = SrcParamData%C2_21
 ENDIF
-IF ( ALLOCATED( SrcParamData%C2_42 ) ) THEN
-  i1 = SIZE(SrcParamData%C2_42,1)
-  i2 = SIZE(SrcParamData%C2_42,2)
-  IF (.NOT.ALLOCATED(DstParamData%C2_42)) ALLOCATE(DstParamData%C2_42(i1,i2))
-  DstParamData%C2_42 = SrcParamData%C2_42
+IF (ALLOCATED(SrcParamData%C2_42)) THEN
+   i1_l = LBOUND(SrcParamData%C2_42,1)
+   i1_u = UBOUND(SrcParamData%C2_42,1)
+   i2_l = LBOUND(SrcParamData%C2_42,2)
+   i2_u = UBOUND(SrcParamData%C2_42,2)
+   IF (.NOT.ALLOCATED(DstParamData%C2_42)) THEN 
+      ALLOCATE(DstParamData%C2_42(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%C2_42.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%C2_42 = SrcParamData%C2_42
 ENDIF
-IF ( ALLOCATED( SrcParamData%D2_11 ) ) THEN
-  i1 = SIZE(SrcParamData%D2_11,1)
-  i2 = SIZE(SrcParamData%D2_11,2)
-  IF (.NOT.ALLOCATED(DstParamData%D2_11)) ALLOCATE(DstParamData%D2_11(i1,i2))
-  DstParamData%D2_11 = SrcParamData%D2_11
+IF (ALLOCATED(SrcParamData%D2_11)) THEN
+   i1_l = LBOUND(SrcParamData%D2_11,1)
+   i1_u = UBOUND(SrcParamData%D2_11,1)
+   i2_l = LBOUND(SrcParamData%D2_11,2)
+   i2_u = UBOUND(SrcParamData%D2_11,2)
+   IF (.NOT.ALLOCATED(DstParamData%D2_11)) THEN 
+      ALLOCATE(DstParamData%D2_11(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%D2_11.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%D2_11 = SrcParamData%D2_11
 ENDIF
-IF ( ALLOCATED( SrcParamData%D2_21 ) ) THEN
-  i1 = SIZE(SrcParamData%D2_21,1)
-  i2 = SIZE(SrcParamData%D2_21,2)
-  IF (.NOT.ALLOCATED(DstParamData%D2_21)) ALLOCATE(DstParamData%D2_21(i1,i2))
-  DstParamData%D2_21 = SrcParamData%D2_21
+IF (ALLOCATED(SrcParamData%D2_21)) THEN
+   i1_l = LBOUND(SrcParamData%D2_21,1)
+   i1_u = UBOUND(SrcParamData%D2_21,1)
+   i2_l = LBOUND(SrcParamData%D2_21,2)
+   i2_u = UBOUND(SrcParamData%D2_21,2)
+   IF (.NOT.ALLOCATED(DstParamData%D2_21)) THEN 
+      ALLOCATE(DstParamData%D2_21(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%D2_21.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%D2_21 = SrcParamData%D2_21
 ENDIF
-IF ( ALLOCATED( SrcParamData%D2_32 ) ) THEN
-  i1 = SIZE(SrcParamData%D2_32,1)
-  i2 = SIZE(SrcParamData%D2_32,2)
-  IF (.NOT.ALLOCATED(DstParamData%D2_32)) ALLOCATE(DstParamData%D2_32(i1,i2))
-  DstParamData%D2_32 = SrcParamData%D2_32
+IF (ALLOCATED(SrcParamData%D2_32)) THEN
+   i1_l = LBOUND(SrcParamData%D2_32,1)
+   i1_u = UBOUND(SrcParamData%D2_32,1)
+   i2_l = LBOUND(SrcParamData%D2_32,2)
+   i2_u = UBOUND(SrcParamData%D2_32,2)
+   IF (.NOT.ALLOCATED(DstParamData%D2_32)) THEN 
+      ALLOCATE(DstParamData%D2_32(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%D2_32.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%D2_32 = SrcParamData%D2_32
 ENDIF
-IF ( ALLOCATED( SrcParamData%D2_42 ) ) THEN
-  i1 = SIZE(SrcParamData%D2_42,1)
-  i2 = SIZE(SrcParamData%D2_42,2)
-  IF (.NOT.ALLOCATED(DstParamData%D2_42)) ALLOCATE(DstParamData%D2_42(i1,i2))
-  DstParamData%D2_42 = SrcParamData%D2_42
+IF (ALLOCATED(SrcParamData%D2_42)) THEN
+   i1_l = LBOUND(SrcParamData%D2_42,1)
+   i1_u = UBOUND(SrcParamData%D2_42,1)
+   i2_l = LBOUND(SrcParamData%D2_42,2)
+   i2_u = UBOUND(SrcParamData%D2_42,2)
+   IF (.NOT.ALLOCATED(DstParamData%D2_42)) THEN 
+      ALLOCATE(DstParamData%D2_42(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%D2_42.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%D2_42 = SrcParamData%D2_42
 ENDIF
-IF ( ALLOCATED( SrcParamData%Cbar_21 ) ) THEN
-  i1 = SIZE(SrcParamData%Cbar_21,1)
-  i2 = SIZE(SrcParamData%Cbar_21,2)
-  IF (.NOT.ALLOCATED(DstParamData%Cbar_21)) ALLOCATE(DstParamData%Cbar_21(i1,i2))
-  DstParamData%Cbar_21 = SrcParamData%Cbar_21
+IF (ALLOCATED(SrcParamData%Cbar_21)) THEN
+   i1_l = LBOUND(SrcParamData%Cbar_21,1)
+   i1_u = UBOUND(SrcParamData%Cbar_21,1)
+   i2_l = LBOUND(SrcParamData%Cbar_21,2)
+   i2_u = UBOUND(SrcParamData%Cbar_21,2)
+   IF (.NOT.ALLOCATED(DstParamData%Cbar_21)) THEN 
+      ALLOCATE(DstParamData%Cbar_21(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%Cbar_21.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%Cbar_21 = SrcParamData%Cbar_21
 ENDIF
-IF ( ALLOCATED( SrcParamData%Cbar_22 ) ) THEN
-  i1 = SIZE(SrcParamData%Cbar_22,1)
-  i2 = SIZE(SrcParamData%Cbar_22,2)
-  IF (.NOT.ALLOCATED(DstParamData%Cbar_22)) ALLOCATE(DstParamData%Cbar_22(i1,i2))
-  DstParamData%Cbar_22 = SrcParamData%Cbar_22
+IF (ALLOCATED(SrcParamData%Cbar_22)) THEN
+   i1_l = LBOUND(SrcParamData%Cbar_22,1)
+   i1_u = UBOUND(SrcParamData%Cbar_22,1)
+   i2_l = LBOUND(SrcParamData%Cbar_22,2)
+   i2_u = UBOUND(SrcParamData%Cbar_22,2)
+   IF (.NOT.ALLOCATED(DstParamData%Cbar_22)) THEN 
+      ALLOCATE(DstParamData%Cbar_22(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%Cbar_22.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%Cbar_22 = SrcParamData%Cbar_22
 ENDIF
-IF ( ALLOCATED( SrcParamData%Dbar_13 ) ) THEN
-  i1 = SIZE(SrcParamData%Dbar_13,1)
-  i2 = SIZE(SrcParamData%Dbar_13,2)
-  IF (.NOT.ALLOCATED(DstParamData%Dbar_13)) ALLOCATE(DstParamData%Dbar_13(i1,i2))
-  DstParamData%Dbar_13 = SrcParamData%Dbar_13
+IF (ALLOCATED(SrcParamData%Dbar_13)) THEN
+   i1_l = LBOUND(SrcParamData%Dbar_13,1)
+   i1_u = UBOUND(SrcParamData%Dbar_13,1)
+   i2_l = LBOUND(SrcParamData%Dbar_13,2)
+   i2_u = UBOUND(SrcParamData%Dbar_13,2)
+   IF (.NOT.ALLOCATED(DstParamData%Dbar_13)) THEN 
+      ALLOCATE(DstParamData%Dbar_13(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%Dbar_13.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%Dbar_13 = SrcParamData%Dbar_13
 ENDIF
-IF ( ALLOCATED( SrcParamData%Dbar_23 ) ) THEN
-  i1 = SIZE(SrcParamData%Dbar_23,1)
-  i2 = SIZE(SrcParamData%Dbar_23,2)
-  IF (.NOT.ALLOCATED(DstParamData%Dbar_23)) ALLOCATE(DstParamData%Dbar_23(i1,i2))
-  DstParamData%Dbar_23 = SrcParamData%Dbar_23
+IF (ALLOCATED(SrcParamData%Dbar_23)) THEN
+   i1_l = LBOUND(SrcParamData%Dbar_23,1)
+   i1_u = UBOUND(SrcParamData%Dbar_23,1)
+   i2_l = LBOUND(SrcParamData%Dbar_23,2)
+   i2_u = UBOUND(SrcParamData%Dbar_23,2)
+   IF (.NOT.ALLOCATED(DstParamData%Dbar_23)) THEN 
+      ALLOCATE(DstParamData%Dbar_23(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%Dbar_23.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%Dbar_23 = SrcParamData%Dbar_23
 ENDIF
-IF ( ALLOCATED( SrcParamData%Dbar_24 ) ) THEN
-  i1 = SIZE(SrcParamData%Dbar_24,1)
-  i2 = SIZE(SrcParamData%Dbar_24,2)
-  IF (.NOT.ALLOCATED(DstParamData%Dbar_24)) ALLOCATE(DstParamData%Dbar_24(i1,i2))
-  DstParamData%Dbar_24 = SrcParamData%Dbar_24
+IF (ALLOCATED(SrcParamData%Dbar_24)) THEN
+   i1_l = LBOUND(SrcParamData%Dbar_24,1)
+   i1_u = UBOUND(SrcParamData%Dbar_24,1)
+   i2_l = LBOUND(SrcParamData%Dbar_24,2)
+   i2_u = UBOUND(SrcParamData%Dbar_24,2)
+   IF (.NOT.ALLOCATED(DstParamData%Dbar_24)) THEN 
+      ALLOCATE(DstParamData%Dbar_24(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%Dbar_24.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%Dbar_24 = SrcParamData%Dbar_24
 ENDIF
-IF ( ALLOCATED( SrcParamData%Fbar_21 ) ) THEN
-  i1 = SIZE(SrcParamData%Fbar_21,1)
-  IF (.NOT.ALLOCATED(DstParamData%Fbar_21)) ALLOCATE(DstParamData%Fbar_21(i1))
-  DstParamData%Fbar_21 = SrcParamData%Fbar_21
+IF (ALLOCATED(SrcParamData%Fbar_21)) THEN
+   i1_l = LBOUND(SrcParamData%Fbar_21,1)
+   i1_u = UBOUND(SrcParamData%Fbar_21,1)
+   IF (.NOT.ALLOCATED(DstParamData%Fbar_21)) THEN 
+      ALLOCATE(DstParamData%Fbar_21(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%Fbar_21.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%Fbar_21 = SrcParamData%Fbar_21
 ENDIF
-IF ( ALLOCATED( SrcParamData%MBB ) ) THEN
-  i1 = SIZE(SrcParamData%MBB,1)
-  i2 = SIZE(SrcParamData%MBB,2)
-  IF (.NOT.ALLOCATED(DstParamData%MBB)) ALLOCATE(DstParamData%MBB(i1,i2))
-  DstParamData%MBB = SrcParamData%MBB
+IF (ALLOCATED(SrcParamData%MBB)) THEN
+   i1_l = LBOUND(SrcParamData%MBB,1)
+   i1_u = UBOUND(SrcParamData%MBB,1)
+   i2_l = LBOUND(SrcParamData%MBB,2)
+   i2_u = UBOUND(SrcParamData%MBB,2)
+   IF (.NOT.ALLOCATED(DstParamData%MBB)) THEN 
+      ALLOCATE(DstParamData%MBB(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%MBB.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%MBB = SrcParamData%MBB
 ENDIF
-IF ( ALLOCATED( SrcParamData%KBB ) ) THEN
-  i1 = SIZE(SrcParamData%KBB,1)
-  i2 = SIZE(SrcParamData%KBB,2)
-  IF (.NOT.ALLOCATED(DstParamData%KBB)) ALLOCATE(DstParamData%KBB(i1,i2))
-  DstParamData%KBB = SrcParamData%KBB
+IF (ALLOCATED(SrcParamData%KBB)) THEN
+   i1_l = LBOUND(SrcParamData%KBB,1)
+   i1_u = UBOUND(SrcParamData%KBB,1)
+   i2_l = LBOUND(SrcParamData%KBB,2)
+   i2_u = UBOUND(SrcParamData%KBB,2)
+   IF (.NOT.ALLOCATED(DstParamData%KBB)) THEN 
+      ALLOCATE(DstParamData%KBB(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%KBB.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%KBB = SrcParamData%KBB
 ENDIF
-IF ( ALLOCATED( SrcParamData%MBM ) ) THEN
-  i1 = SIZE(SrcParamData%MBM,1)
-  i2 = SIZE(SrcParamData%MBM,2)
-  IF (.NOT.ALLOCATED(DstParamData%MBM)) ALLOCATE(DstParamData%MBM(i1,i2))
-  DstParamData%MBM = SrcParamData%MBM
+IF (ALLOCATED(SrcParamData%MBM)) THEN
+   i1_l = LBOUND(SrcParamData%MBM,1)
+   i1_u = UBOUND(SrcParamData%MBM,1)
+   i2_l = LBOUND(SrcParamData%MBM,2)
+   i2_u = UBOUND(SrcParamData%MBM,2)
+   IF (.NOT.ALLOCATED(DstParamData%MBM)) THEN 
+      ALLOCATE(DstParamData%MBM(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%MBM.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%MBM = SrcParamData%MBM
 ENDIF
-IF ( ALLOCATED( SrcParamData%PHI_R ) ) THEN
-  i1 = SIZE(SrcParamData%PHI_R,1)
-  i2 = SIZE(SrcParamData%PHI_R,2)
-  IF (.NOT.ALLOCATED(DstParamData%PHI_R)) ALLOCATE(DstParamData%PHI_R(i1,i2))
-  DstParamData%PHI_R = SrcParamData%PHI_R
+IF (ALLOCATED(SrcParamData%PHI_R)) THEN
+   i1_l = LBOUND(SrcParamData%PHI_R,1)
+   i1_u = UBOUND(SrcParamData%PHI_R,1)
+   i2_l = LBOUND(SrcParamData%PHI_R,2)
+   i2_u = UBOUND(SrcParamData%PHI_R,2)
+   IF (.NOT.ALLOCATED(DstParamData%PHI_R)) THEN 
+      ALLOCATE(DstParamData%PHI_R(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%PHI_R.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%PHI_R = SrcParamData%PHI_R
 ENDIF
-IF ( ALLOCATED( SrcParamData%PHI_M ) ) THEN
-  i1 = SIZE(SrcParamData%PHI_M,1)
-  i2 = SIZE(SrcParamData%PHI_M,2)
-  IF (.NOT.ALLOCATED(DstParamData%PHI_M)) ALLOCATE(DstParamData%PHI_M(i1,i2))
-  DstParamData%PHI_M = SrcParamData%PHI_M
+IF (ALLOCATED(SrcParamData%PHI_M)) THEN
+   i1_l = LBOUND(SrcParamData%PHI_M,1)
+   i1_u = UBOUND(SrcParamData%PHI_M,1)
+   i2_l = LBOUND(SrcParamData%PHI_M,2)
+   i2_u = UBOUND(SrcParamData%PHI_M,2)
+   IF (.NOT.ALLOCATED(DstParamData%PHI_M)) THEN 
+      ALLOCATE(DstParamData%PHI_M(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%PHI_M.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%PHI_M = SrcParamData%PHI_M
 ENDIF
-IF ( ALLOCATED( SrcParamData%TIreact ) ) THEN
-  i1 = SIZE(SrcParamData%TIreact,1)
-  i2 = SIZE(SrcParamData%TIreact,2)
-  IF (.NOT.ALLOCATED(DstParamData%TIreact)) ALLOCATE(DstParamData%TIreact(i1,i2))
-  DstParamData%TIreact = SrcParamData%TIreact
+IF (ALLOCATED(SrcParamData%TIreact)) THEN
+   i1_l = LBOUND(SrcParamData%TIreact,1)
+   i1_u = UBOUND(SrcParamData%TIreact,1)
+   i2_l = LBOUND(SrcParamData%TIreact,2)
+   i2_u = UBOUND(SrcParamData%TIreact,2)
+   IF (.NOT.ALLOCATED(DstParamData%TIreact)) THEN 
+      ALLOCATE(DstParamData%TIreact(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%TIreact.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%TIreact = SrcParamData%TIreact
 ENDIF
-  DstParamData%NModes = SrcParamData%NModes
-IF ( ALLOCATED( SrcParamData%Elems ) ) THEN
-  i1 = SIZE(SrcParamData%Elems,1)
-  i2 = SIZE(SrcParamData%Elems,2)
-  IF (.NOT.ALLOCATED(DstParamData%Elems)) ALLOCATE(DstParamData%Elems(i1,i2))
-  DstParamData%Elems = SrcParamData%Elems
+   DstParamData%NModes = SrcParamData%NModes
+IF (ALLOCATED(SrcParamData%Elems)) THEN
+   i1_l = LBOUND(SrcParamData%Elems,1)
+   i1_u = UBOUND(SrcParamData%Elems,1)
+   i2_l = LBOUND(SrcParamData%Elems,2)
+   i2_u = UBOUND(SrcParamData%Elems,2)
+   IF (.NOT.ALLOCATED(DstParamData%Elems)) THEN 
+      ALLOCATE(DstParamData%Elems(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%Elems.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%Elems = SrcParamData%Elems
 ENDIF
-  DstParamData%qmL = SrcParamData%qmL
-  DstParamData%uL = SrcParamData%uL
-  DstParamData%DofL = SrcParamData%DofL
-  DstParamData%NNodes_L = SrcParamData%NNodes_L
-  DstParamData%DofI = SrcParamData%DofI
-  DstParamData%DofR = SrcParamData%DofR
-  DstParamData%DofC = SrcParamData%DofC
-  DstParamData%NReact = SrcParamData%NReact
-IF ( ALLOCATED( SrcParamData%Reacts ) ) THEN
-  i1 = SIZE(SrcParamData%Reacts,1)
-  i2 = SIZE(SrcParamData%Reacts,2)
-  IF (.NOT.ALLOCATED(DstParamData%Reacts)) ALLOCATE(DstParamData%Reacts(i1,i2))
-  DstParamData%Reacts = SrcParamData%Reacts
+   DstParamData%qmL = SrcParamData%qmL
+   DstParamData%uL = SrcParamData%uL
+   DstParamData%DofL = SrcParamData%DofL
+   DstParamData%NNodes_L = SrcParamData%NNodes_L
+   DstParamData%DofI = SrcParamData%DofI
+   DstParamData%DofR = SrcParamData%DofR
+   DstParamData%DofC = SrcParamData%DofC
+   DstParamData%NReact = SrcParamData%NReact
+IF (ALLOCATED(SrcParamData%Reacts)) THEN
+   i1_l = LBOUND(SrcParamData%Reacts,1)
+   i1_u = UBOUND(SrcParamData%Reacts,1)
+   i2_l = LBOUND(SrcParamData%Reacts,2)
+   i2_u = UBOUND(SrcParamData%Reacts,2)
+   IF (.NOT.ALLOCATED(DstParamData%Reacts)) THEN 
+      ALLOCATE(DstParamData%Reacts(i1_l:i1_u,i2_l:i2_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%Reacts.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%Reacts = SrcParamData%Reacts
 ENDIF
-  DstParamData%Nmembers = SrcParamData%Nmembers
-  DstParamData%TPdofL = SrcParamData%TPdofL
-  DstParamData%URbarL = SrcParamData%URbarL
-  DstParamData%URdotdotL = SrcParamData%URdotdotL
-  DstParamData%UdotdotL = SrcParamData%UdotdotL
-  DstParamData%Y2L = SrcParamData%Y2L
-  DstParamData%IntMethod = SrcParamData%IntMethod
-  DstParamData%NAvgEls = SrcParamData%NAvgEls
-IF ( ALLOCATED( SrcParamData%IDI ) ) THEN
-  i1 = SIZE(SrcParamData%IDI,1)
-  IF (.NOT.ALLOCATED(DstParamData%IDI)) ALLOCATE(DstParamData%IDI(i1))
-  DstParamData%IDI = SrcParamData%IDI
+   DstParamData%Nmembers = SrcParamData%Nmembers
+   DstParamData%TPdofL = SrcParamData%TPdofL
+   DstParamData%URbarL = SrcParamData%URbarL
+   DstParamData%URdotdotL = SrcParamData%URdotdotL
+   DstParamData%UdotdotL = SrcParamData%UdotdotL
+   DstParamData%Y2L = SrcParamData%Y2L
+   DstParamData%IntMethod = SrcParamData%IntMethod
+   DstParamData%NAvgEls = SrcParamData%NAvgEls
+IF (ALLOCATED(SrcParamData%IDI)) THEN
+   i1_l = LBOUND(SrcParamData%IDI,1)
+   i1_u = UBOUND(SrcParamData%IDI,1)
+   IF (.NOT.ALLOCATED(DstParamData%IDI)) THEN 
+      ALLOCATE(DstParamData%IDI(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%IDI.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%IDI = SrcParamData%IDI
 ENDIF
-IF ( ALLOCATED( SrcParamData%IDR ) ) THEN
-  i1 = SIZE(SrcParamData%IDR,1)
-  IF (.NOT.ALLOCATED(DstParamData%IDR)) ALLOCATE(DstParamData%IDR(i1))
-  DstParamData%IDR = SrcParamData%IDR
+IF (ALLOCATED(SrcParamData%IDR)) THEN
+   i1_l = LBOUND(SrcParamData%IDR,1)
+   i1_u = UBOUND(SrcParamData%IDR,1)
+   IF (.NOT.ALLOCATED(DstParamData%IDR)) THEN 
+      ALLOCATE(DstParamData%IDR(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%IDR.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%IDR = SrcParamData%IDR
 ENDIF
-IF ( ALLOCATED( SrcParamData%IDL ) ) THEN
-  i1 = SIZE(SrcParamData%IDL,1)
-  IF (.NOT.ALLOCATED(DstParamData%IDL)) ALLOCATE(DstParamData%IDL(i1))
-  DstParamData%IDL = SrcParamData%IDL
+IF (ALLOCATED(SrcParamData%IDL)) THEN
+   i1_l = LBOUND(SrcParamData%IDL,1)
+   i1_u = UBOUND(SrcParamData%IDL,1)
+   IF (.NOT.ALLOCATED(DstParamData%IDL)) THEN 
+      ALLOCATE(DstParamData%IDL(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%IDL.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%IDL = SrcParamData%IDL
 ENDIF
-IF ( ALLOCATED( SrcParamData%IDC ) ) THEN
-  i1 = SIZE(SrcParamData%IDC,1)
-  IF (.NOT.ALLOCATED(DstParamData%IDC)) ALLOCATE(DstParamData%IDC(i1))
-  DstParamData%IDC = SrcParamData%IDC
+IF (ALLOCATED(SrcParamData%IDC)) THEN
+   i1_l = LBOUND(SrcParamData%IDC,1)
+   i1_u = UBOUND(SrcParamData%IDC,1)
+   IF (.NOT.ALLOCATED(DstParamData%IDC)) THEN 
+      ALLOCATE(DstParamData%IDC(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%IDC.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%IDC = SrcParamData%IDC
 ENDIF
-IF ( ALLOCATED( SrcParamData%IDY ) ) THEN
-  i1 = SIZE(SrcParamData%IDY,1)
-  IF (.NOT.ALLOCATED(DstParamData%IDY)) ALLOCATE(DstParamData%IDY(i1))
-  DstParamData%IDY = SrcParamData%IDY
+IF (ALLOCATED(SrcParamData%IDY)) THEN
+   i1_l = LBOUND(SrcParamData%IDY,1)
+   i1_u = UBOUND(SrcParamData%IDY,1)
+   IF (.NOT.ALLOCATED(DstParamData%IDY)) THEN 
+      ALLOCATE(DstParamData%IDY(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%IDY.'
+         RETURN
+      END IF
+   END IF
+   DstParamData%IDY = SrcParamData%IDY
 ENDIF
-  DstParamData%NMOutputs = SrcParamData%NMOutputs
-  DstParamData%NumOuts = SrcParamData%NumOuts
-  DstParamData%SDDeltaT = SrcParamData%SDDeltaT
-  DstParamData%OutSwtch = SrcParamData%OutSwtch
-  DstParamData%UnJckF = SrcParamData%UnJckF
-  DstParamData%Delim = SrcParamData%Delim
-  DstParamData%OutFmt = SrcParamData%OutFmt
-  DstParamData%OutSFmt = SrcParamData%OutSFmt
-  DstParamData%OutJckF = SrcParamData%OutJckF
-  DstParamData%JEchoFile = SrcParamData%JEchoFile
-DO i1 = 1, SIZE(SrcParamData%MoutLst,1)
-  CALL SD_Copymeshauxdatatype( SrcParamData%MoutLst(i1), DstParamData%MoutLst(i1), CtrlCode, ErrStat, ErrMsg )
-ENDDO
-DO i1 = 1, SIZE(SrcParamData%MoutLst2,1)
-  CALL SD_Copymeshauxdatatype( SrcParamData%MoutLst2(i1), DstParamData%MoutLst2(i1), CtrlCode, ErrStat, ErrMsg )
-ENDDO
-DO i1 = 1, SIZE(SrcParamData%MoutLst3,1)
-  CALL SD_Copymeshauxdatatype( SrcParamData%MoutLst3(i1), DstParamData%MoutLst3(i1), CtrlCode, ErrStat, ErrMsg )
-ENDDO
-DO i1 = 1, SIZE(SrcParamData%ElemProps,1)
-  CALL SD_Copyelemproptype( SrcParamData%ElemProps(i1), DstParamData%ElemProps(i1), CtrlCode, ErrStat, ErrMsg )
-ENDDO
-DO i1 = 1, SIZE(SrcParamData%OutParam,1)
-  CALL SD_Copyoutvar_type( SrcParamData%OutParam(i1), DstParamData%OutParam(i1), CtrlCode, ErrStat, ErrMsg )
-ENDDO
-  DstParamData%OutAll = SrcParamData%OutAll
-  DstParamData%OutReact = SrcParamData%OutReact
-  DstParamData%OutAllInt = SrcParamData%OutAllInt
-  DstParamData%OutAllDims = SrcParamData%OutAllDims
-  DstParamData%OutDec = SrcParamData%OutDec
-  DstParamData%MaxOUtPts = SrcParamData%MaxOUtPts
+   DstParamData%NMOutputs = SrcParamData%NMOutputs
+   DstParamData%NumOuts = SrcParamData%NumOuts
+   DstParamData%SDDeltaT = SrcParamData%SDDeltaT
+   DstParamData%OutSwtch = SrcParamData%OutSwtch
+   DstParamData%UnJckF = SrcParamData%UnJckF
+   DstParamData%Delim = SrcParamData%Delim
+   DstParamData%OutFmt = SrcParamData%OutFmt
+   DstParamData%OutSFmt = SrcParamData%OutSFmt
+   DstParamData%OutJckF = SrcParamData%OutJckF
+IF (ALLOCATED(SrcParamData%MoutLst)) THEN
+   i1_l = LBOUND(SrcParamData%MoutLst,1)
+   i1_u = UBOUND(SrcParamData%MoutLst,1)
+   IF (.NOT.ALLOCATED(DstParamData%MoutLst)) THEN 
+      ALLOCATE(DstParamData%MoutLst(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%MoutLst.'
+         RETURN
+      END IF
+   END IF
+   DO i1 = LBOUND(SrcParamData%MoutLst,1), UBOUND(SrcParamData%MoutLst,1)
+      CALL SD_Copymeshauxdatatype( SrcParamData%MoutLst(i1), DstParamData%MoutLst(i1), CtrlCode, ErrStat, ErrMsg )
+   ENDDO
+ENDIF
+IF (ALLOCATED(SrcParamData%MoutLst2)) THEN
+   i1_l = LBOUND(SrcParamData%MoutLst2,1)
+   i1_u = UBOUND(SrcParamData%MoutLst2,1)
+   IF (.NOT.ALLOCATED(DstParamData%MoutLst2)) THEN 
+      ALLOCATE(DstParamData%MoutLst2(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%MoutLst2.'
+         RETURN
+      END IF
+   END IF
+   DO i1 = LBOUND(SrcParamData%MoutLst2,1), UBOUND(SrcParamData%MoutLst2,1)
+      CALL SD_Copymeshauxdatatype( SrcParamData%MoutLst2(i1), DstParamData%MoutLst2(i1), CtrlCode, ErrStat, ErrMsg )
+   ENDDO
+ENDIF
+IF (ALLOCATED(SrcParamData%MoutLst3)) THEN
+   i1_l = LBOUND(SrcParamData%MoutLst3,1)
+   i1_u = UBOUND(SrcParamData%MoutLst3,1)
+   IF (.NOT.ALLOCATED(DstParamData%MoutLst3)) THEN 
+      ALLOCATE(DstParamData%MoutLst3(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%MoutLst3.'
+         RETURN
+      END IF
+   END IF
+   DO i1 = LBOUND(SrcParamData%MoutLst3,1), UBOUND(SrcParamData%MoutLst3,1)
+      CALL SD_Copymeshauxdatatype( SrcParamData%MoutLst3(i1), DstParamData%MoutLst3(i1), CtrlCode, ErrStat, ErrMsg )
+   ENDDO
+ENDIF
+IF (ALLOCATED(SrcParamData%ElemProps)) THEN
+   i1_l = LBOUND(SrcParamData%ElemProps,1)
+   i1_u = UBOUND(SrcParamData%ElemProps,1)
+   IF (.NOT.ALLOCATED(DstParamData%ElemProps)) THEN 
+      ALLOCATE(DstParamData%ElemProps(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%ElemProps.'
+         RETURN
+      END IF
+   END IF
+   DO i1 = LBOUND(SrcParamData%ElemProps,1), UBOUND(SrcParamData%ElemProps,1)
+      CALL SD_Copyelemproptype( SrcParamData%ElemProps(i1), DstParamData%ElemProps(i1), CtrlCode, ErrStat, ErrMsg )
+   ENDDO
+ENDIF
+IF (ALLOCATED(SrcParamData%OutParam)) THEN
+   i1_l = LBOUND(SrcParamData%OutParam,1)
+   i1_u = UBOUND(SrcParamData%OutParam,1)
+   IF (.NOT.ALLOCATED(DstParamData%OutParam)) THEN 
+      ALLOCATE(DstParamData%OutParam(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyParam: Error allocating DstParamData%OutParam.'
+         RETURN
+      END IF
+   END IF
+   DO i1 = LBOUND(SrcParamData%OutParam,1), UBOUND(SrcParamData%OutParam,1)
+      CALL SD_Copyoutvar_type( SrcParamData%OutParam(i1), DstParamData%OutParam(i1), CtrlCode, ErrStat, ErrMsg )
+   ENDDO
+ENDIF
+   DstParamData%OutAll = SrcParamData%OutAll
+   DstParamData%OutReact = SrcParamData%OutReact
+   DstParamData%OutAllInt = SrcParamData%OutAllInt
+   DstParamData%OutAllDims = SrcParamData%OutAllDims
+   DstParamData%OutDec = SrcParamData%OutDec
+   DstParamData%MaxOUtPts = SrcParamData%MaxOUtPts
  END SUBROUTINE SD_CopyParam
 
  SUBROUTINE SD_DestroyParam( ParamData, ErrStat, ErrMsg )
@@ -2482,66 +3322,143 @@ ENDDO
 ! 
   ErrStat = ErrID_None
   ErrMsg  = ""
-  IF ( ALLOCATED(ParamData%A_21) ) DEALLOCATE(ParamData%A_21)
-  IF ( ALLOCATED(ParamData%A_22) ) DEALLOCATE(ParamData%A_22)
-  IF ( ALLOCATED(ParamData%B_23) ) DEALLOCATE(ParamData%B_23)
-  IF ( ALLOCATED(ParamData%B_24) ) DEALLOCATE(ParamData%B_24)
-  IF ( ALLOCATED(ParamData%FX) ) DEALLOCATE(ParamData%FX)
-  IF ( ALLOCATED(ParamData%C1_11) ) DEALLOCATE(ParamData%C1_11)
-  IF ( ALLOCATED(ParamData%C1_12) ) DEALLOCATE(ParamData%C1_12)
-  IF ( ALLOCATED(ParamData%D1_11) ) DEALLOCATE(ParamData%D1_11)
-  IF ( ALLOCATED(ParamData%D1_13) ) DEALLOCATE(ParamData%D1_13)
-  IF ( ALLOCATED(ParamData%D1_14) ) DEALLOCATE(ParamData%D1_14)
-  IF ( ALLOCATED(ParamData%FY) ) DEALLOCATE(ParamData%FY)
-  IF ( ALLOCATED(ParamData%C2_21) ) DEALLOCATE(ParamData%C2_21)
-  IF ( ALLOCATED(ParamData%C2_42) ) DEALLOCATE(ParamData%C2_42)
-  IF ( ALLOCATED(ParamData%D2_11) ) DEALLOCATE(ParamData%D2_11)
-  IF ( ALLOCATED(ParamData%D2_21) ) DEALLOCATE(ParamData%D2_21)
-  IF ( ALLOCATED(ParamData%D2_32) ) DEALLOCATE(ParamData%D2_32)
-  IF ( ALLOCATED(ParamData%D2_42) ) DEALLOCATE(ParamData%D2_42)
-  IF ( ALLOCATED(ParamData%Cbar_21) ) DEALLOCATE(ParamData%Cbar_21)
-  IF ( ALLOCATED(ParamData%Cbar_22) ) DEALLOCATE(ParamData%Cbar_22)
-  IF ( ALLOCATED(ParamData%Dbar_13) ) DEALLOCATE(ParamData%Dbar_13)
-  IF ( ALLOCATED(ParamData%Dbar_23) ) DEALLOCATE(ParamData%Dbar_23)
-  IF ( ALLOCATED(ParamData%Dbar_24) ) DEALLOCATE(ParamData%Dbar_24)
-  IF ( ALLOCATED(ParamData%Fbar_21) ) DEALLOCATE(ParamData%Fbar_21)
-  IF ( ALLOCATED(ParamData%MBB) ) DEALLOCATE(ParamData%MBB)
-  IF ( ALLOCATED(ParamData%KBB) ) DEALLOCATE(ParamData%KBB)
-  IF ( ALLOCATED(ParamData%MBM) ) DEALLOCATE(ParamData%MBM)
-  IF ( ALLOCATED(ParamData%PHI_R) ) DEALLOCATE(ParamData%PHI_R)
-  IF ( ALLOCATED(ParamData%PHI_M) ) DEALLOCATE(ParamData%PHI_M)
-  IF ( ALLOCATED(ParamData%TIreact) ) DEALLOCATE(ParamData%TIreact)
-  IF ( ALLOCATED(ParamData%Elems) ) DEALLOCATE(ParamData%Elems)
-  IF ( ALLOCATED(ParamData%Reacts) ) DEALLOCATE(ParamData%Reacts)
-  IF ( ALLOCATED(ParamData%IDI) ) DEALLOCATE(ParamData%IDI)
-  IF ( ALLOCATED(ParamData%IDR) ) DEALLOCATE(ParamData%IDR)
-  IF ( ALLOCATED(ParamData%IDL) ) DEALLOCATE(ParamData%IDL)
-  IF ( ALLOCATED(ParamData%IDC) ) DEALLOCATE(ParamData%IDC)
-  IF ( ALLOCATED(ParamData%IDY) ) DEALLOCATE(ParamData%IDY)
+IF (ALLOCATED(ParamData%A_21)) THEN
+   DEALLOCATE(ParamData%A_21)
+ENDIF
+IF (ALLOCATED(ParamData%A_22)) THEN
+   DEALLOCATE(ParamData%A_22)
+ENDIF
+IF (ALLOCATED(ParamData%B_23)) THEN
+   DEALLOCATE(ParamData%B_23)
+ENDIF
+IF (ALLOCATED(ParamData%B_24)) THEN
+   DEALLOCATE(ParamData%B_24)
+ENDIF
+IF (ALLOCATED(ParamData%FX)) THEN
+   DEALLOCATE(ParamData%FX)
+ENDIF
+IF (ALLOCATED(ParamData%C1_11)) THEN
+   DEALLOCATE(ParamData%C1_11)
+ENDIF
+IF (ALLOCATED(ParamData%C1_12)) THEN
+   DEALLOCATE(ParamData%C1_12)
+ENDIF
+IF (ALLOCATED(ParamData%D1_11)) THEN
+   DEALLOCATE(ParamData%D1_11)
+ENDIF
+IF (ALLOCATED(ParamData%D1_13)) THEN
+   DEALLOCATE(ParamData%D1_13)
+ENDIF
+IF (ALLOCATED(ParamData%D1_14)) THEN
+   DEALLOCATE(ParamData%D1_14)
+ENDIF
+IF (ALLOCATED(ParamData%FY)) THEN
+   DEALLOCATE(ParamData%FY)
+ENDIF
+IF (ALLOCATED(ParamData%C2_21)) THEN
+   DEALLOCATE(ParamData%C2_21)
+ENDIF
+IF (ALLOCATED(ParamData%C2_42)) THEN
+   DEALLOCATE(ParamData%C2_42)
+ENDIF
+IF (ALLOCATED(ParamData%D2_11)) THEN
+   DEALLOCATE(ParamData%D2_11)
+ENDIF
+IF (ALLOCATED(ParamData%D2_21)) THEN
+   DEALLOCATE(ParamData%D2_21)
+ENDIF
+IF (ALLOCATED(ParamData%D2_32)) THEN
+   DEALLOCATE(ParamData%D2_32)
+ENDIF
+IF (ALLOCATED(ParamData%D2_42)) THEN
+   DEALLOCATE(ParamData%D2_42)
+ENDIF
+IF (ALLOCATED(ParamData%Cbar_21)) THEN
+   DEALLOCATE(ParamData%Cbar_21)
+ENDIF
+IF (ALLOCATED(ParamData%Cbar_22)) THEN
+   DEALLOCATE(ParamData%Cbar_22)
+ENDIF
+IF (ALLOCATED(ParamData%Dbar_13)) THEN
+   DEALLOCATE(ParamData%Dbar_13)
+ENDIF
+IF (ALLOCATED(ParamData%Dbar_23)) THEN
+   DEALLOCATE(ParamData%Dbar_23)
+ENDIF
+IF (ALLOCATED(ParamData%Dbar_24)) THEN
+   DEALLOCATE(ParamData%Dbar_24)
+ENDIF
+IF (ALLOCATED(ParamData%Fbar_21)) THEN
+   DEALLOCATE(ParamData%Fbar_21)
+ENDIF
+IF (ALLOCATED(ParamData%MBB)) THEN
+   DEALLOCATE(ParamData%MBB)
+ENDIF
+IF (ALLOCATED(ParamData%KBB)) THEN
+   DEALLOCATE(ParamData%KBB)
+ENDIF
+IF (ALLOCATED(ParamData%MBM)) THEN
+   DEALLOCATE(ParamData%MBM)
+ENDIF
+IF (ALLOCATED(ParamData%PHI_R)) THEN
+   DEALLOCATE(ParamData%PHI_R)
+ENDIF
+IF (ALLOCATED(ParamData%PHI_M)) THEN
+   DEALLOCATE(ParamData%PHI_M)
+ENDIF
+IF (ALLOCATED(ParamData%TIreact)) THEN
+   DEALLOCATE(ParamData%TIreact)
+ENDIF
+IF (ALLOCATED(ParamData%Elems)) THEN
+   DEALLOCATE(ParamData%Elems)
+ENDIF
+IF (ALLOCATED(ParamData%Reacts)) THEN
+   DEALLOCATE(ParamData%Reacts)
+ENDIF
+IF (ALLOCATED(ParamData%IDI)) THEN
+   DEALLOCATE(ParamData%IDI)
+ENDIF
+IF (ALLOCATED(ParamData%IDR)) THEN
+   DEALLOCATE(ParamData%IDR)
+ENDIF
+IF (ALLOCATED(ParamData%IDL)) THEN
+   DEALLOCATE(ParamData%IDL)
+ENDIF
+IF (ALLOCATED(ParamData%IDC)) THEN
+   DEALLOCATE(ParamData%IDC)
+ENDIF
+IF (ALLOCATED(ParamData%IDY)) THEN
+   DEALLOCATE(ParamData%IDY)
+ENDIF
 IF (ALLOCATED(ParamData%MoutLst)) THEN
-DO i1 = 1, SIZE(ParamData%MoutLst,1)
+DO i1 = LBOUND(ParamData%MoutLst,1), UBOUND(ParamData%MoutLst,1)
   CALL SD_Destroymeshauxdatatype( ParamData%MoutLst(i1), ErrStat, ErrMsg )
 ENDDO
+   DEALLOCATE(ParamData%MoutLst)
 ENDIF
 IF (ALLOCATED(ParamData%MoutLst2)) THEN
-DO i1 = 1, SIZE(ParamData%MoutLst2,1)
+DO i1 = LBOUND(ParamData%MoutLst2,1), UBOUND(ParamData%MoutLst2,1)
   CALL SD_Destroymeshauxdatatype( ParamData%MoutLst2(i1), ErrStat, ErrMsg )
 ENDDO
+   DEALLOCATE(ParamData%MoutLst2)
 ENDIF
 IF (ALLOCATED(ParamData%MoutLst3)) THEN
-DO i1 = 1, SIZE(ParamData%MoutLst3,1)
+DO i1 = LBOUND(ParamData%MoutLst3,1), UBOUND(ParamData%MoutLst3,1)
   CALL SD_Destroymeshauxdatatype( ParamData%MoutLst3(i1), ErrStat, ErrMsg )
 ENDDO
+   DEALLOCATE(ParamData%MoutLst3)
 ENDIF
 IF (ALLOCATED(ParamData%ElemProps)) THEN
-DO i1 = 1, SIZE(ParamData%ElemProps,1)
+DO i1 = LBOUND(ParamData%ElemProps,1), UBOUND(ParamData%ElemProps,1)
   CALL SD_Destroyelemproptype( ParamData%ElemProps(i1), ErrStat, ErrMsg )
 ENDDO
+   DEALLOCATE(ParamData%ElemProps)
 ENDIF
 IF (ALLOCATED(ParamData%OutParam)) THEN
-DO i1 = 1, SIZE(ParamData%OutParam,1)
+DO i1 = LBOUND(ParamData%OutParam,1), UBOUND(ParamData%OutParam,1)
   CALL SD_Destroyoutvar_type( ParamData%OutParam(i1), ErrStat, ErrMsg )
 ENDDO
+   DEALLOCATE(ParamData%OutParam)
 ENDIF
  END SUBROUTINE SD_DestroyParam
 
@@ -2649,10 +3566,10 @@ ENDIF
   Int_BufSz   = Int_BufSz   + SIZE( InData%IDY )  ! IDY 
   Int_BufSz  = Int_BufSz  + 1  ! NMOutputs
   Int_BufSz  = Int_BufSz  + 1  ! NumOuts
-  Re_BufSz   = Re_BufSz   + 1  ! SDDeltaT
+  Db_BufSz   = Db_BufSz   + 1  ! SDDeltaT
   Int_BufSz  = Int_BufSz  + 1  ! OutSwtch
   Int_BufSz  = Int_BufSz  + 1  ! UnJckF
-DO i1 = 1, SIZE(InData%MoutLst,1)
+DO i1 = LBOUND(InData%MoutLst,1), UBOUND(InData%MoutLst,1)
   CALL SD_Packmeshauxdatatype( Re_MoutLst_Buf, Db_MoutLst_Buf, Int_MoutLst_Buf, InData%MoutLst(i1), ErrStat, ErrMsg, .TRUE. ) ! MoutLst 
   IF(ALLOCATED(Re_MoutLst_Buf)) Re_BufSz  = Re_BufSz  + SIZE( Re_MoutLst_Buf  ) ! MoutLst
   IF(ALLOCATED(Db_MoutLst_Buf)) Db_BufSz  = Db_BufSz  + SIZE( Db_MoutLst_Buf  ) ! MoutLst
@@ -2661,7 +3578,7 @@ DO i1 = 1, SIZE(InData%MoutLst,1)
   IF(ALLOCATED(Db_MoutLst_Buf))  DEALLOCATE(Db_MoutLst_Buf)
   IF(ALLOCATED(Int_MoutLst_Buf)) DEALLOCATE(Int_MoutLst_Buf)
 ENDDO
-DO i1 = 1, SIZE(InData%MoutLst2,1)
+DO i1 = LBOUND(InData%MoutLst2,1), UBOUND(InData%MoutLst2,1)
   CALL SD_Packmeshauxdatatype( Re_MoutLst2_Buf, Db_MoutLst2_Buf, Int_MoutLst2_Buf, InData%MoutLst2(i1), ErrStat, ErrMsg, .TRUE. ) ! MoutLst2 
   IF(ALLOCATED(Re_MoutLst2_Buf)) Re_BufSz  = Re_BufSz  + SIZE( Re_MoutLst2_Buf  ) ! MoutLst2
   IF(ALLOCATED(Db_MoutLst2_Buf)) Db_BufSz  = Db_BufSz  + SIZE( Db_MoutLst2_Buf  ) ! MoutLst2
@@ -2670,7 +3587,7 @@ DO i1 = 1, SIZE(InData%MoutLst2,1)
   IF(ALLOCATED(Db_MoutLst2_Buf))  DEALLOCATE(Db_MoutLst2_Buf)
   IF(ALLOCATED(Int_MoutLst2_Buf)) DEALLOCATE(Int_MoutLst2_Buf)
 ENDDO
-DO i1 = 1, SIZE(InData%MoutLst3,1)
+DO i1 = LBOUND(InData%MoutLst3,1), UBOUND(InData%MoutLst3,1)
   CALL SD_Packmeshauxdatatype( Re_MoutLst3_Buf, Db_MoutLst3_Buf, Int_MoutLst3_Buf, InData%MoutLst3(i1), ErrStat, ErrMsg, .TRUE. ) ! MoutLst3 
   IF(ALLOCATED(Re_MoutLst3_Buf)) Re_BufSz  = Re_BufSz  + SIZE( Re_MoutLst3_Buf  ) ! MoutLst3
   IF(ALLOCATED(Db_MoutLst3_Buf)) Db_BufSz  = Db_BufSz  + SIZE( Db_MoutLst3_Buf  ) ! MoutLst3
@@ -2679,7 +3596,7 @@ DO i1 = 1, SIZE(InData%MoutLst3,1)
   IF(ALLOCATED(Db_MoutLst3_Buf))  DEALLOCATE(Db_MoutLst3_Buf)
   IF(ALLOCATED(Int_MoutLst3_Buf)) DEALLOCATE(Int_MoutLst3_Buf)
 ENDDO
-DO i1 = 1, SIZE(InData%ElemProps,1)
+DO i1 = LBOUND(InData%ElemProps,1), UBOUND(InData%ElemProps,1)
   CALL SD_Packelemproptype( Re_ElemProps_Buf, Db_ElemProps_Buf, Int_ElemProps_Buf, InData%ElemProps(i1), ErrStat, ErrMsg, .TRUE. ) ! ElemProps 
   IF(ALLOCATED(Re_ElemProps_Buf)) Re_BufSz  = Re_BufSz  + SIZE( Re_ElemProps_Buf  ) ! ElemProps
   IF(ALLOCATED(Db_ElemProps_Buf)) Db_BufSz  = Db_BufSz  + SIZE( Db_ElemProps_Buf  ) ! ElemProps
@@ -2688,7 +3605,7 @@ DO i1 = 1, SIZE(InData%ElemProps,1)
   IF(ALLOCATED(Db_ElemProps_Buf))  DEALLOCATE(Db_ElemProps_Buf)
   IF(ALLOCATED(Int_ElemProps_Buf)) DEALLOCATE(Int_ElemProps_Buf)
 ENDDO
-DO i1 = 1, SIZE(InData%OutParam,1)
+DO i1 = LBOUND(InData%OutParam,1), UBOUND(InData%OutParam,1)
   CALL SD_Packoutvar_type( Re_OutParam_Buf, Db_OutParam_Buf, Int_OutParam_Buf, InData%OutParam(i1), ErrStat, ErrMsg, .TRUE. ) ! OutParam 
   IF(ALLOCATED(Re_OutParam_Buf)) Re_BufSz  = Re_BufSz  + SIZE( Re_OutParam_Buf  ) ! OutParam
   IF(ALLOCATED(Db_OutParam_Buf)) Db_BufSz  = Db_BufSz  + SIZE( Db_OutParam_Buf  ) ! OutParam
@@ -2886,13 +3803,13 @@ ENDDO
   Int_Xferred   = Int_Xferred   + 1
   IF ( .NOT. OnlySize ) IntKiBuf ( Int_Xferred:Int_Xferred+(1)-1 ) = (InData%NumOuts )
   Int_Xferred   = Int_Xferred   + 1
-  IF ( .NOT. OnlySize ) ReKiBuf ( Re_Xferred:Re_Xferred+(1)-1 ) =  (InData%SDDeltaT )
-  Re_Xferred   = Re_Xferred   + 1
+  IF ( .NOT. OnlySize ) DbKiBuf ( Db_Xferred:Db_Xferred+(1)-1 ) =  (InData%SDDeltaT )
+  Db_Xferred   = Db_Xferred   + 1
   IF ( .NOT. OnlySize ) IntKiBuf ( Int_Xferred:Int_Xferred+(1)-1 ) = (InData%OutSwtch )
   Int_Xferred   = Int_Xferred   + 1
   IF ( .NOT. OnlySize ) IntKiBuf ( Int_Xferred:Int_Xferred+(1)-1 ) = (InData%UnJckF )
   Int_Xferred   = Int_Xferred   + 1
-DO i1 = 1, SIZE(InData%MoutLst,1)
+DO i1 = LBOUND(InData%MoutLst,1), UBOUND(InData%MoutLst,1)
   CALL SD_Packmeshauxdatatype( Re_MoutLst_Buf, Db_MoutLst_Buf, Int_MoutLst_Buf, InData%MoutLst(i1), ErrStat, ErrMsg, OnlySize ) ! MoutLst 
   IF(ALLOCATED(Re_MoutLst_Buf)) THEN
     IF ( .NOT. OnlySize ) ReKiBuf( Re_Xferred:Re_Xferred+SIZE(Re_MoutLst_Buf)-1 ) = Re_MoutLst_Buf
@@ -2910,7 +3827,7 @@ DO i1 = 1, SIZE(InData%MoutLst,1)
   IF( ALLOCATED(Db_MoutLst_Buf) )  DEALLOCATE(Db_MoutLst_Buf)
   IF( ALLOCATED(Int_MoutLst_Buf) ) DEALLOCATE(Int_MoutLst_Buf)
 ENDDO
-DO i1 = 1, SIZE(InData%MoutLst2,1)
+DO i1 = LBOUND(InData%MoutLst2,1), UBOUND(InData%MoutLst2,1)
   CALL SD_Packmeshauxdatatype( Re_MoutLst2_Buf, Db_MoutLst2_Buf, Int_MoutLst2_Buf, InData%MoutLst2(i1), ErrStat, ErrMsg, OnlySize ) ! MoutLst2 
   IF(ALLOCATED(Re_MoutLst2_Buf)) THEN
     IF ( .NOT. OnlySize ) ReKiBuf( Re_Xferred:Re_Xferred+SIZE(Re_MoutLst2_Buf)-1 ) = Re_MoutLst2_Buf
@@ -2928,7 +3845,7 @@ DO i1 = 1, SIZE(InData%MoutLst2,1)
   IF( ALLOCATED(Db_MoutLst2_Buf) )  DEALLOCATE(Db_MoutLst2_Buf)
   IF( ALLOCATED(Int_MoutLst2_Buf) ) DEALLOCATE(Int_MoutLst2_Buf)
 ENDDO
-DO i1 = 1, SIZE(InData%MoutLst3,1)
+DO i1 = LBOUND(InData%MoutLst3,1), UBOUND(InData%MoutLst3,1)
   CALL SD_Packmeshauxdatatype( Re_MoutLst3_Buf, Db_MoutLst3_Buf, Int_MoutLst3_Buf, InData%MoutLst3(i1), ErrStat, ErrMsg, OnlySize ) ! MoutLst3 
   IF(ALLOCATED(Re_MoutLst3_Buf)) THEN
     IF ( .NOT. OnlySize ) ReKiBuf( Re_Xferred:Re_Xferred+SIZE(Re_MoutLst3_Buf)-1 ) = Re_MoutLst3_Buf
@@ -2946,7 +3863,7 @@ DO i1 = 1, SIZE(InData%MoutLst3,1)
   IF( ALLOCATED(Db_MoutLst3_Buf) )  DEALLOCATE(Db_MoutLst3_Buf)
   IF( ALLOCATED(Int_MoutLst3_Buf) ) DEALLOCATE(Int_MoutLst3_Buf)
 ENDDO
-DO i1 = 1, SIZE(InData%ElemProps,1)
+DO i1 = LBOUND(InData%ElemProps,1), UBOUND(InData%ElemProps,1)
   CALL SD_Packelemproptype( Re_ElemProps_Buf, Db_ElemProps_Buf, Int_ElemProps_Buf, InData%ElemProps(i1), ErrStat, ErrMsg, OnlySize ) ! ElemProps 
   IF(ALLOCATED(Re_ElemProps_Buf)) THEN
     IF ( .NOT. OnlySize ) ReKiBuf( Re_Xferred:Re_Xferred+SIZE(Re_ElemProps_Buf)-1 ) = Re_ElemProps_Buf
@@ -2964,7 +3881,7 @@ DO i1 = 1, SIZE(InData%ElemProps,1)
   IF( ALLOCATED(Db_ElemProps_Buf) )  DEALLOCATE(Db_ElemProps_Buf)
   IF( ALLOCATED(Int_ElemProps_Buf) ) DEALLOCATE(Int_ElemProps_Buf)
 ENDDO
-DO i1 = 1, SIZE(InData%OutParam,1)
+DO i1 = LBOUND(InData%OutParam,1), UBOUND(InData%OutParam,1)
   CALL SD_Packoutvar_type( Re_OutParam_Buf, Db_OutParam_Buf, Int_OutParam_Buf, InData%OutParam(i1), ErrStat, ErrMsg, OnlySize ) ! OutParam 
   IF(ALLOCATED(Re_OutParam_Buf)) THEN
     IF ( .NOT. OnlySize ) ReKiBuf( Re_Xferred:Re_Xferred+SIZE(Re_OutParam_Buf)-1 ) = Re_OutParam_Buf
@@ -3294,13 +4211,13 @@ ENDDO
   Int_Xferred   = Int_Xferred   + 1
   OutData%NumOuts = IntKiBuf ( Int_Xferred )
   Int_Xferred   = Int_Xferred   + 1
-  OutData%SDDeltaT = ReKiBuf ( Re_Xferred )
-  Re_Xferred   = Re_Xferred   + 1
+  OutData%SDDeltaT = DbKiBuf ( Db_Xferred )
+  Db_Xferred   = Db_Xferred   + 1
   OutData%OutSwtch = IntKiBuf ( Int_Xferred )
   Int_Xferred   = Int_Xferred   + 1
   OutData%UnJckF = IntKiBuf ( Int_Xferred )
   Int_Xferred   = Int_Xferred   + 1
-DO i1 = 1, SIZE(OutData%MoutLst,1)
+DO i1 = LBOUND(OutData%MoutLst,1), UBOUND(OutData%MoutLst,1)
  ! first call SD_Packmeshauxdatatype to get correctly sized buffers for unpacking
   CALL SD_Packmeshauxdatatype( Re_MoutLst_Buf, Db_MoutLst_Buf, Int_MoutLst_Buf, OutData%MoutLst(i1), ErrStat, ErrMsg, .TRUE. ) ! MoutLst 
   IF(ALLOCATED(Re_MoutLst_Buf)) THEN
@@ -3317,7 +4234,7 @@ DO i1 = 1, SIZE(OutData%MoutLst,1)
   ENDIF
   CALL SD_UnPackmeshauxdatatype( Re_MoutLst_Buf, Db_MoutLst_Buf, Int_MoutLst_Buf, OutData%MoutLst(i1), ErrStat, ErrMsg ) ! MoutLst 
 ENDDO
-DO i1 = 1, SIZE(OutData%MoutLst2,1)
+DO i1 = LBOUND(OutData%MoutLst2,1), UBOUND(OutData%MoutLst2,1)
  ! first call SD_Packmeshauxdatatype to get correctly sized buffers for unpacking
   CALL SD_Packmeshauxdatatype( Re_MoutLst2_Buf, Db_MoutLst2_Buf, Int_MoutLst2_Buf, OutData%MoutLst2(i1), ErrStat, ErrMsg, .TRUE. ) ! MoutLst2 
   IF(ALLOCATED(Re_MoutLst2_Buf)) THEN
@@ -3334,7 +4251,7 @@ DO i1 = 1, SIZE(OutData%MoutLst2,1)
   ENDIF
   CALL SD_UnPackmeshauxdatatype( Re_MoutLst2_Buf, Db_MoutLst2_Buf, Int_MoutLst2_Buf, OutData%MoutLst2(i1), ErrStat, ErrMsg ) ! MoutLst2 
 ENDDO
-DO i1 = 1, SIZE(OutData%MoutLst3,1)
+DO i1 = LBOUND(OutData%MoutLst3,1), UBOUND(OutData%MoutLst3,1)
  ! first call SD_Packmeshauxdatatype to get correctly sized buffers for unpacking
   CALL SD_Packmeshauxdatatype( Re_MoutLst3_Buf, Db_MoutLst3_Buf, Int_MoutLst3_Buf, OutData%MoutLst3(i1), ErrStat, ErrMsg, .TRUE. ) ! MoutLst3 
   IF(ALLOCATED(Re_MoutLst3_Buf)) THEN
@@ -3351,7 +4268,7 @@ DO i1 = 1, SIZE(OutData%MoutLst3,1)
   ENDIF
   CALL SD_UnPackmeshauxdatatype( Re_MoutLst3_Buf, Db_MoutLst3_Buf, Int_MoutLst3_Buf, OutData%MoutLst3(i1), ErrStat, ErrMsg ) ! MoutLst3 
 ENDDO
-DO i1 = 1, SIZE(OutData%ElemProps,1)
+DO i1 = LBOUND(OutData%ElemProps,1), UBOUND(OutData%ElemProps,1)
  ! first call SD_Packelemproptype to get correctly sized buffers for unpacking
   CALL SD_Packelemproptype( Re_ElemProps_Buf, Db_ElemProps_Buf, Int_ElemProps_Buf, OutData%ElemProps(i1), ErrStat, ErrMsg, .TRUE. ) ! ElemProps 
   IF(ALLOCATED(Re_ElemProps_Buf)) THEN
@@ -3368,7 +4285,7 @@ DO i1 = 1, SIZE(OutData%ElemProps,1)
   ENDIF
   CALL SD_UnPackelemproptype( Re_ElemProps_Buf, Db_ElemProps_Buf, Int_ElemProps_Buf, OutData%ElemProps(i1), ErrStat, ErrMsg ) ! ElemProps 
 ENDDO
-DO i1 = 1, SIZE(OutData%OutParam,1)
+DO i1 = LBOUND(OutData%OutParam,1), UBOUND(OutData%OutParam,1)
  ! first call SD_Packoutvar_type to get correctly sized buffers for unpacking
   CALL SD_Packoutvar_type( Re_OutParam_Buf, Db_OutParam_Buf, Int_OutParam_Buf, OutData%OutParam(i1), ErrStat, ErrMsg, .TRUE. ) ! OutParam 
   IF(ALLOCATED(Re_OutParam_Buf)) THEN
@@ -3399,18 +4316,20 @@ ENDDO
  END SUBROUTINE SD_UnPackParam
 
  SUBROUTINE SD_CopyInput( SrcInputData, DstInputData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(SD_inputtype), INTENT(INOUT) :: SrcInputData
-  TYPE(SD_inputtype), INTENT(INOUT) :: DstInputData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(SD_inputtype), INTENT(INOUT) :: SrcInputData
+   TYPE(SD_inputtype), INTENT(INOUT) :: DstInputData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL MeshCopy( SrcInputData%TPMesh, DstInputData%TPMesh, CtrlCode, ErrStat, ErrMsg )
-  CALL MeshCopy( SrcInputData%LMesh, DstInputData%LMesh, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+     CALL MeshCopy( SrcInputData%TPMesh, DstInputData%TPMesh, CtrlCode, ErrStat, ErrMsg )
+     CALL MeshCopy( SrcInputData%LMesh, DstInputData%LMesh, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_CopyInput
 
  SUBROUTINE SD_DestroyInput( InputData, ErrStat, ErrMsg )
@@ -3597,22 +4516,32 @@ ENDDO
  END SUBROUTINE SD_UnPackInput
 
  SUBROUTINE SD_CopyOutput( SrcOutputData, DstOutputData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(SD_outputtype), INTENT(INOUT) :: SrcOutputData
-  TYPE(SD_outputtype), INTENT(INOUT) :: DstOutputData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(SD_outputtype), INTENT(INOUT) :: SrcOutputData
+   TYPE(SD_outputtype), INTENT(INOUT) :: DstOutputData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL MeshCopy( SrcOutputData%Y1Mesh, DstOutputData%Y1Mesh, CtrlCode, ErrStat, ErrMsg )
-  CALL MeshCopy( SrcOutputData%Y2Mesh, DstOutputData%Y2Mesh, CtrlCode, ErrStat, ErrMsg )
-IF ( ALLOCATED( SrcOutputData%WriteOutput ) ) THEN
-  i1 = SIZE(SrcOutputData%WriteOutput,1)
-  IF (.NOT.ALLOCATED(DstOutputData%WriteOutput)) ALLOCATE(DstOutputData%WriteOutput(i1))
-  DstOutputData%WriteOutput = SrcOutputData%WriteOutput
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+     CALL MeshCopy( SrcOutputData%Y1Mesh, DstOutputData%Y1Mesh, CtrlCode, ErrStat, ErrMsg )
+     CALL MeshCopy( SrcOutputData%Y2Mesh, DstOutputData%Y2Mesh, CtrlCode, ErrStat, ErrMsg )
+IF (ALLOCATED(SrcOutputData%WriteOutput)) THEN
+   i1_l = LBOUND(SrcOutputData%WriteOutput,1)
+   i1_u = UBOUND(SrcOutputData%WriteOutput,1)
+   IF (.NOT.ALLOCATED(DstOutputData%WriteOutput)) THEN 
+      ALLOCATE(DstOutputData%WriteOutput(i1_l:i1_u),STAT=ErrStat)
+      IF (ErrStat /= 0) THEN 
+         ErrStat = ErrID_Fatal 
+         ErrMsg = 'SD_CopyOutput: Error allocating DstOutputData%WriteOutput.'
+         RETURN
+      END IF
+   END IF
+   DstOutputData%WriteOutput = SrcOutputData%WriteOutput
 ENDIF
  END SUBROUTINE SD_CopyOutput
 
@@ -3626,7 +4555,9 @@ ENDIF
   ErrMsg  = ""
   CALL MeshDestroy( OutputData%Y1Mesh, ErrStat, ErrMsg )
   CALL MeshDestroy( OutputData%Y2Mesh, ErrStat, ErrMsg )
-  IF ( ALLOCATED(OutputData%WriteOutput) ) DEALLOCATE(OutputData%WriteOutput)
+IF (ALLOCATED(OutputData%WriteOutput)) THEN
+   DEALLOCATE(OutputData%WriteOutput)
+ENDIF
  END SUBROUTINE SD_DestroyOutput
 
  SUBROUTINE SD_PackOutput( ReKiBuf, DbKiBuf, IntKiBuf, Indata, ErrStat, ErrMsg, SizeOnly )
@@ -3812,17 +4743,19 @@ ENDIF
  END SUBROUTINE SD_UnPackOutput
 
  SUBROUTINE SD_CopydYdu( SrcdYduData, DstdYduData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(SD_partialoutputpinputtype), INTENT(INOUT) :: SrcdYduData
-  TYPE(SD_partialoutputpinputtype), INTENT(INOUT) :: DstdYduData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(SD_partialoutputpinputtype), INTENT(INOUT) :: SrcdYduData
+   TYPE(SD_partialoutputpinputtype), INTENT(INOUT) :: DstdYduData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL SD_CopyInput( SrcdYduData%DummyOutput, DstdYduData%DummyOutput, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+      CALL SD_CopyInput( SrcdYduData%DummyOutput, DstdYduData%DummyOutput, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_CopydYdu
 
  SUBROUTINE SD_DestroydYdu( dYduData, ErrStat, ErrMsg )
@@ -3958,17 +4891,19 @@ ENDIF
  END SUBROUTINE SD_UnPackdYdu
 
  SUBROUTINE SD_CopydXdu( SrcdXduData, DstdXduData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(SD_partialcontstatepinputtype), INTENT(INOUT) :: SrcdXduData
-  TYPE(SD_partialcontstatepinputtype), INTENT(INOUT) :: DstdXduData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(SD_partialcontstatepinputtype), INTENT(INOUT) :: SrcdXduData
+   TYPE(SD_partialcontstatepinputtype), INTENT(INOUT) :: DstdXduData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL SD_CopyInput( SrcdXduData%DummyContState, DstdXduData%DummyContState, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+      CALL SD_CopyInput( SrcdXduData%DummyContState, DstdXduData%DummyContState, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_CopydXdu
 
  SUBROUTINE SD_DestroydXdu( dXduData, ErrStat, ErrMsg )
@@ -4104,17 +5039,19 @@ ENDIF
  END SUBROUTINE SD_UnPackdXdu
 
  SUBROUTINE SD_CopydXddu( SrcdXdduData, DstdXdduData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(SD_partialdiscstatepinputtype), INTENT(INOUT) :: SrcdXdduData
-  TYPE(SD_partialdiscstatepinputtype), INTENT(INOUT) :: DstdXdduData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(SD_partialdiscstatepinputtype), INTENT(INOUT) :: SrcdXdduData
+   TYPE(SD_partialdiscstatepinputtype), INTENT(INOUT) :: DstdXdduData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL SD_CopyInput( SrcdXdduData%DummyDiscState, DstdXdduData%DummyDiscState, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+      CALL SD_CopyInput( SrcdXdduData%DummyDiscState, DstdXdduData%DummyDiscState, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_CopydXddu
 
  SUBROUTINE SD_DestroydXddu( dXdduData, ErrStat, ErrMsg )
@@ -4250,17 +5187,19 @@ ENDIF
  END SUBROUTINE SD_UnPackdXddu
 
  SUBROUTINE SD_CopydZdu( SrcdZduData, DstdZduData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(SD_partialconstrstatepinputtype), INTENT(INOUT) :: SrcdZduData
-  TYPE(SD_partialconstrstatepinputtype), INTENT(INOUT) :: DstdZduData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(SD_partialconstrstatepinputtype), INTENT(INOUT) :: SrcdZduData
+   TYPE(SD_partialconstrstatepinputtype), INTENT(INOUT) :: DstdZduData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL SD_CopyInput( SrcdZduData%DummyConstrState, DstdZduData%DummyConstrState, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+      CALL SD_CopyInput( SrcdZduData%DummyConstrState, DstdZduData%DummyConstrState, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_CopydZdu
 
  SUBROUTINE SD_DestroydZdu( dZduData, ErrStat, ErrMsg )
@@ -4396,17 +5335,19 @@ ENDIF
  END SUBROUTINE SD_UnPackdZdu
 
  SUBROUTINE SD_Copypartialoutputpcontstatetype( SrcpartialoutputpcontstatetypeData, DstpartialoutputpcontstatetypeData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(sd_partialoutputpcontstatetype), INTENT(INOUT) :: SrcpartialoutputpcontstatetypeData
-  TYPE(sd_partialoutputpcontstatetype), INTENT(INOUT) :: DstpartialoutputpcontstatetypeData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(sd_partialoutputpcontstatetype), INTENT(INOUT) :: SrcpartialoutputpcontstatetypeData
+   TYPE(sd_partialoutputpcontstatetype), INTENT(INOUT) :: DstpartialoutputpcontstatetypeData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL SD_CopyContState( SrcpartialoutputpcontstatetypeData%DummyOutput, DstpartialoutputpcontstatetypeData%DummyOutput, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+      CALL SD_CopyContState( SrcpartialoutputpcontstatetypeData%DummyOutput, DstpartialoutputpcontstatetypeData%DummyOutput, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_Copypartialoutputpcontstatetype
 
  SUBROUTINE SD_Destroypartialoutputpcontstatetype( partialoutputpcontstatetypeData, ErrStat, ErrMsg )
@@ -4542,17 +5483,19 @@ ENDIF
  END SUBROUTINE SD_UnPackpartialoutputpcontstatetype
 
  SUBROUTINE SD_Copypartialcontstatepcontstatetype( SrcpartialcontstatepcontstatetypeData, DstpartialcontstatepcontstatetypeData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(sd_partialcontstatepcontstatetype), INTENT(INOUT) :: SrcpartialcontstatepcontstatetypeData
-  TYPE(sd_partialcontstatepcontstatetype), INTENT(INOUT) :: DstpartialcontstatepcontstatetypeData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(sd_partialcontstatepcontstatetype), INTENT(INOUT) :: SrcpartialcontstatepcontstatetypeData
+   TYPE(sd_partialcontstatepcontstatetype), INTENT(INOUT) :: DstpartialcontstatepcontstatetypeData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL SD_CopyContState( SrcpartialcontstatepcontstatetypeData%DummyContState, DstpartialcontstatepcontstatetypeData%DummyContState, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+      CALL SD_CopyContState( SrcpartialcontstatepcontstatetypeData%DummyContState, DstpartialcontstatepcontstatetypeData%DummyContState, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_Copypartialcontstatepcontstatetype
 
  SUBROUTINE SD_Destroypartialcontstatepcontstatetype( partialcontstatepcontstatetypeData, ErrStat, ErrMsg )
@@ -4688,17 +5631,19 @@ ENDIF
  END SUBROUTINE SD_UnPackpartialcontstatepcontstatetype
 
  SUBROUTINE SD_Copypartialdiscstatepcontstatetype( SrcpartialdiscstatepcontstatetypeData, DstpartialdiscstatepcontstatetypeData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(sd_partialdiscstatepcontstatetype), INTENT(INOUT) :: SrcpartialdiscstatepcontstatetypeData
-  TYPE(sd_partialdiscstatepcontstatetype), INTENT(INOUT) :: DstpartialdiscstatepcontstatetypeData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(sd_partialdiscstatepcontstatetype), INTENT(INOUT) :: SrcpartialdiscstatepcontstatetypeData
+   TYPE(sd_partialdiscstatepcontstatetype), INTENT(INOUT) :: DstpartialdiscstatepcontstatetypeData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL SD_CopyContState( SrcpartialdiscstatepcontstatetypeData%DummyDiscState, DstpartialdiscstatepcontstatetypeData%DummyDiscState, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+      CALL SD_CopyContState( SrcpartialdiscstatepcontstatetypeData%DummyDiscState, DstpartialdiscstatepcontstatetypeData%DummyDiscState, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_Copypartialdiscstatepcontstatetype
 
  SUBROUTINE SD_Destroypartialdiscstatepcontstatetype( partialdiscstatepcontstatetypeData, ErrStat, ErrMsg )
@@ -4834,17 +5779,19 @@ ENDIF
  END SUBROUTINE SD_UnPackpartialdiscstatepcontstatetype
 
  SUBROUTINE SD_Copypartialconstrstatepcontstatetype( SrcpartialconstrstatepcontstatetypeData, DstpartialconstrstatepcontstatetypeData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(sd_partialconstrstatepcontstatetype), INTENT(INOUT) :: SrcpartialconstrstatepcontstatetypeData
-  TYPE(sd_partialconstrstatepcontstatetype), INTENT(INOUT) :: DstpartialconstrstatepcontstatetypeData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(sd_partialconstrstatepcontstatetype), INTENT(INOUT) :: SrcpartialconstrstatepcontstatetypeData
+   TYPE(sd_partialconstrstatepcontstatetype), INTENT(INOUT) :: DstpartialconstrstatepcontstatetypeData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL SD_CopyContState( SrcpartialconstrstatepcontstatetypeData%DummyConstrState, DstpartialconstrstatepcontstatetypeData%DummyConstrState, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+      CALL SD_CopyContState( SrcpartialconstrstatepcontstatetypeData%DummyConstrState, DstpartialconstrstatepcontstatetypeData%DummyConstrState, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_Copypartialconstrstatepcontstatetype
 
  SUBROUTINE SD_Destroypartialconstrstatepcontstatetype( partialconstrstatepcontstatetypeData, ErrStat, ErrMsg )
@@ -4980,17 +5927,19 @@ ENDIF
  END SUBROUTINE SD_UnPackpartialconstrstatepcontstatetype
 
  SUBROUTINE SD_Copypartialoutputpdiscstatetype( SrcpartialoutputpdiscstatetypeData, DstpartialoutputpdiscstatetypeData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(sd_partialoutputpdiscstatetype), INTENT(INOUT) :: SrcpartialoutputpdiscstatetypeData
-  TYPE(sd_partialoutputpdiscstatetype), INTENT(INOUT) :: DstpartialoutputpdiscstatetypeData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(sd_partialoutputpdiscstatetype), INTENT(INOUT) :: SrcpartialoutputpdiscstatetypeData
+   TYPE(sd_partialoutputpdiscstatetype), INTENT(INOUT) :: DstpartialoutputpdiscstatetypeData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL SD_CopyDiscState( SrcpartialoutputpdiscstatetypeData%DummyOutput, DstpartialoutputpdiscstatetypeData%DummyOutput, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+      CALL SD_CopyDiscState( SrcpartialoutputpdiscstatetypeData%DummyOutput, DstpartialoutputpdiscstatetypeData%DummyOutput, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_Copypartialoutputpdiscstatetype
 
  SUBROUTINE SD_Destroypartialoutputpdiscstatetype( partialoutputpdiscstatetypeData, ErrStat, ErrMsg )
@@ -5126,17 +6075,19 @@ ENDIF
  END SUBROUTINE SD_UnPackpartialoutputpdiscstatetype
 
  SUBROUTINE SD_Copypartialcontstatepdiscstatetype( SrcpartialcontstatepdiscstatetypeData, DstpartialcontstatepdiscstatetypeData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(sd_partialcontstatepdiscstatetype), INTENT(INOUT) :: SrcpartialcontstatepdiscstatetypeData
-  TYPE(sd_partialcontstatepdiscstatetype), INTENT(INOUT) :: DstpartialcontstatepdiscstatetypeData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(sd_partialcontstatepdiscstatetype), INTENT(INOUT) :: SrcpartialcontstatepdiscstatetypeData
+   TYPE(sd_partialcontstatepdiscstatetype), INTENT(INOUT) :: DstpartialcontstatepdiscstatetypeData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL SD_CopyDiscState( SrcpartialcontstatepdiscstatetypeData%DummyContState, DstpartialcontstatepdiscstatetypeData%DummyContState, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+      CALL SD_CopyDiscState( SrcpartialcontstatepdiscstatetypeData%DummyContState, DstpartialcontstatepdiscstatetypeData%DummyContState, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_Copypartialcontstatepdiscstatetype
 
  SUBROUTINE SD_Destroypartialcontstatepdiscstatetype( partialcontstatepdiscstatetypeData, ErrStat, ErrMsg )
@@ -5272,17 +6223,19 @@ ENDIF
  END SUBROUTINE SD_UnPackpartialcontstatepdiscstatetype
 
  SUBROUTINE SD_Copypartialdiscstatepdiscstatetype( SrcpartialdiscstatepdiscstatetypeData, DstpartialdiscstatepdiscstatetypeData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(sd_partialdiscstatepdiscstatetype), INTENT(INOUT) :: SrcpartialdiscstatepdiscstatetypeData
-  TYPE(sd_partialdiscstatepdiscstatetype), INTENT(INOUT) :: DstpartialdiscstatepdiscstatetypeData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(sd_partialdiscstatepdiscstatetype), INTENT(INOUT) :: SrcpartialdiscstatepdiscstatetypeData
+   TYPE(sd_partialdiscstatepdiscstatetype), INTENT(INOUT) :: DstpartialdiscstatepdiscstatetypeData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL SD_CopyDiscState( SrcpartialdiscstatepdiscstatetypeData%DummyDiscState, DstpartialdiscstatepdiscstatetypeData%DummyDiscState, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+      CALL SD_CopyDiscState( SrcpartialdiscstatepdiscstatetypeData%DummyDiscState, DstpartialdiscstatepdiscstatetypeData%DummyDiscState, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_Copypartialdiscstatepdiscstatetype
 
  SUBROUTINE SD_Destroypartialdiscstatepdiscstatetype( partialdiscstatepdiscstatetypeData, ErrStat, ErrMsg )
@@ -5418,17 +6371,19 @@ ENDIF
  END SUBROUTINE SD_UnPackpartialdiscstatepdiscstatetype
 
  SUBROUTINE SD_Copypartialconstrstatepdiscstatetype( SrcpartialconstrstatepdiscstatetypeData, DstpartialconstrstatepdiscstatetypeData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(sd_partialconstrstatepdiscstatetype), INTENT(INOUT) :: SrcpartialconstrstatepdiscstatetypeData
-  TYPE(sd_partialconstrstatepdiscstatetype), INTENT(INOUT) :: DstpartialconstrstatepdiscstatetypeData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(sd_partialconstrstatepdiscstatetype), INTENT(INOUT) :: SrcpartialconstrstatepdiscstatetypeData
+   TYPE(sd_partialconstrstatepdiscstatetype), INTENT(INOUT) :: DstpartialconstrstatepdiscstatetypeData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL SD_CopyDiscState( SrcpartialconstrstatepdiscstatetypeData%DummyConstrState, DstpartialconstrstatepdiscstatetypeData%DummyConstrState, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+      CALL SD_CopyDiscState( SrcpartialconstrstatepdiscstatetypeData%DummyConstrState, DstpartialconstrstatepdiscstatetypeData%DummyConstrState, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_Copypartialconstrstatepdiscstatetype
 
  SUBROUTINE SD_Destroypartialconstrstatepdiscstatetype( partialconstrstatepdiscstatetypeData, ErrStat, ErrMsg )
@@ -5564,17 +6519,19 @@ ENDIF
  END SUBROUTINE SD_UnPackpartialconstrstatepdiscstatetype
 
  SUBROUTINE SD_Copypartialoutputpconstrstatetype( SrcpartialoutputpconstrstatetypeData, DstpartialoutputpconstrstatetypeData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(sd_partialoutputpconstrstatetype), INTENT(INOUT) :: SrcpartialoutputpconstrstatetypeData
-  TYPE(sd_partialoutputpconstrstatetype), INTENT(INOUT) :: DstpartialoutputpconstrstatetypeData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(sd_partialoutputpconstrstatetype), INTENT(INOUT) :: SrcpartialoutputpconstrstatetypeData
+   TYPE(sd_partialoutputpconstrstatetype), INTENT(INOUT) :: DstpartialoutputpconstrstatetypeData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL SD_CopyConstrState( SrcpartialoutputpconstrstatetypeData%DummyOutput, DstpartialoutputpconstrstatetypeData%DummyOutput, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+      CALL SD_CopyConstrState( SrcpartialoutputpconstrstatetypeData%DummyOutput, DstpartialoutputpconstrstatetypeData%DummyOutput, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_Copypartialoutputpconstrstatetype
 
  SUBROUTINE SD_Destroypartialoutputpconstrstatetype( partialoutputpconstrstatetypeData, ErrStat, ErrMsg )
@@ -5710,17 +6667,19 @@ ENDIF
  END SUBROUTINE SD_UnPackpartialoutputpconstrstatetype
 
  SUBROUTINE SD_Copypartialcontstatepconstrstatetype( SrcpartialcontstatepconstrstatetypeData, DstpartialcontstatepconstrstatetypeData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(sd_partialcontstatepconstrstatetype), INTENT(INOUT) :: SrcpartialcontstatepconstrstatetypeData
-  TYPE(sd_partialcontstatepconstrstatetype), INTENT(INOUT) :: DstpartialcontstatepconstrstatetypeData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(sd_partialcontstatepconstrstatetype), INTENT(INOUT) :: SrcpartialcontstatepconstrstatetypeData
+   TYPE(sd_partialcontstatepconstrstatetype), INTENT(INOUT) :: DstpartialcontstatepconstrstatetypeData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL SD_CopyConstrState( SrcpartialcontstatepconstrstatetypeData%DummyContState, DstpartialcontstatepconstrstatetypeData%DummyContState, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+      CALL SD_CopyConstrState( SrcpartialcontstatepconstrstatetypeData%DummyContState, DstpartialcontstatepconstrstatetypeData%DummyContState, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_Copypartialcontstatepconstrstatetype
 
  SUBROUTINE SD_Destroypartialcontstatepconstrstatetype( partialcontstatepconstrstatetypeData, ErrStat, ErrMsg )
@@ -5856,17 +6815,19 @@ ENDIF
  END SUBROUTINE SD_UnPackpartialcontstatepconstrstatetype
 
  SUBROUTINE SD_Copypartialdiscstatepconstrstatetype( SrcpartialdiscstatepconstrstatetypeData, DstpartialdiscstatepconstrstatetypeData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(sd_partialdiscstatepconstrstatetype), INTENT(INOUT) :: SrcpartialdiscstatepconstrstatetypeData
-  TYPE(sd_partialdiscstatepconstrstatetype), INTENT(INOUT) :: DstpartialdiscstatepconstrstatetypeData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(sd_partialdiscstatepconstrstatetype), INTENT(INOUT) :: SrcpartialdiscstatepconstrstatetypeData
+   TYPE(sd_partialdiscstatepconstrstatetype), INTENT(INOUT) :: DstpartialdiscstatepconstrstatetypeData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL SD_CopyConstrState( SrcpartialdiscstatepconstrstatetypeData%DummyDiscState, DstpartialdiscstatepconstrstatetypeData%DummyDiscState, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+      CALL SD_CopyConstrState( SrcpartialdiscstatepconstrstatetypeData%DummyDiscState, DstpartialdiscstatepconstrstatetypeData%DummyDiscState, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_Copypartialdiscstatepconstrstatetype
 
  SUBROUTINE SD_Destroypartialdiscstatepconstrstatetype( partialdiscstatepconstrstatetypeData, ErrStat, ErrMsg )
@@ -6002,17 +6963,19 @@ ENDIF
  END SUBROUTINE SD_UnPackpartialdiscstatepconstrstatetype
 
  SUBROUTINE SD_Copypartialconstrstatepconstrstatetype( SrcpartialconstrstatepconstrstatetypeData, DstpartialconstrstatepconstrstatetypeData, CtrlCode, ErrStat, ErrMsg )
-  TYPE(sd_partialconstrstatepconstrstatetype), INTENT(INOUT) :: SrcpartialconstrstatepconstrstatetypeData
-  TYPE(sd_partialconstrstatepconstrstatetype), INTENT(INOUT) :: DstpartialconstrstatepconstrstatetypeData
-  INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
-  INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
-  CHARACTER(*),    INTENT(  OUT) :: ErrMsg
+   TYPE(sd_partialconstrstatepconstrstatetype), INTENT(INOUT) :: SrcpartialconstrstatepconstrstatetypeData
+   TYPE(sd_partialconstrstatepconstrstatetype), INTENT(INOUT) :: DstpartialconstrstatepconstrstatetypeData
+   INTEGER(IntKi),  INTENT(IN   ) :: CtrlCode
+   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
+   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
 ! Local 
-  INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i,i1,i2,i3,i4,i5,j,k
+   INTEGER(IntKi)                 :: i1_l,i2_l,i3_l,i4_l,i5_l  ! lower bounds for an array dimension
+   INTEGER(IntKi)                 :: i1_u,i2_u,i3_u,i4_u,i5_u  ! upper bounds for an array dimension
 ! 
-  ErrStat = ErrID_None
-  ErrMsg  = ""
-  CALL SD_CopyConstrState( SrcpartialconstrstatepconstrstatetypeData%DummyConstrState, DstpartialconstrstatepconstrstatetypeData%DummyConstrState, CtrlCode, ErrStat, ErrMsg )
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+      CALL SD_CopyConstrState( SrcpartialconstrstatepconstrstatetypeData%DummyConstrState, DstpartialconstrstatepconstrstatetypeData%DummyConstrState, CtrlCode, ErrStat, ErrMsg )
  END SUBROUTINE SD_Copypartialconstrstatepconstrstatetype
 
  SUBROUTINE SD_Destroypartialconstrstatepconstrstatetype( partialconstrstatepconstrstatetypeData, ErrStat, ErrMsg )
@@ -6679,7 +7642,6 @@ ENDIF
    ! local variables
  REAL(DbKi) :: t(SIZE(tin))    ! Times associated with the inputs
  REAL(DbKi) :: t_out           ! Time to which to be extrap/interpd
- TYPE(MeshType) :: tmpmesh
  INTEGER(IntKi)                 :: order    ! order of polynomial fit (max 2)
  REAL(DbKi)                                 :: b0       ! temporary for extrapolation/interpolation
  REAL(DbKi)                                 :: c0       ! temporary for extrapolation/interpolation
@@ -6824,7 +7786,6 @@ ENDIF
    ! local variables
  REAL(DbKi) :: t(SIZE(tin))    ! Times associated with the inputs
  REAL(DbKi) :: t_out           ! Time to which to be extrap/interpd
- TYPE(MeshType) :: tmpmesh
  INTEGER(IntKi)                 :: order    ! order of polynomial fit (max 2)
  REAL(DbKi)                                 :: b0       ! temporary for extrapolation/interpolation
  REAL(DbKi)                                 :: c0       ! temporary for extrapolation/interpolation
@@ -6910,7 +7871,9 @@ ENDIF
  IF ( order .eq. 0 ) THEN
   CALL MeshCopy(u(1)%Y1Mesh, u_out%Y1Mesh, MESH_UPDATECOPY, ErrStat, ErrMsg )
   CALL MeshCopy(u(1)%Y2Mesh, u_out%Y2Mesh, MESH_UPDATECOPY, ErrStat, ErrMsg )
+IF (ALLOCATED(u_out%WriteOutput) .AND. ALLOCATED(u(1)%WriteOutput)) THEN
   u_out%WriteOutput = u(1)%WriteOutput
+END IF ! check if allocated
  ELSE IF ( order .eq. 1 ) THEN
   IF ( EqualRealNos( t(1), t(2) ) ) THEN
     ErrStat = ErrID_Fatal
@@ -6919,12 +7882,14 @@ ENDIF
   END IF
   CALL MeshExtrapInterp1(u(1)%Y1Mesh, u(2)%Y1Mesh, tin, u_out%Y1Mesh, tin_out, ErrStat, ErrMsg )
   CALL MeshExtrapInterp1(u(1)%Y2Mesh, u(2)%Y2Mesh, tin, u_out%Y2Mesh, tin_out, ErrStat, ErrMsg )
+IF (ALLOCATED(u_out%WriteOutput) .AND. ALLOCATED(u(1)%WriteOutput)) THEN
   ALLOCATE(b1(SIZE(u_out%WriteOutput,1)))
   ALLOCATE(c1(SIZE(u_out%WriteOutput,1)))
   b1 = -(u(1)%WriteOutput - u(2)%WriteOutput)/t(2)
   u_out%WriteOutput = u(1)%WriteOutput + b1 * t_out
   DEALLOCATE(b1)
   DEALLOCATE(c1)
+END IF ! check if allocated
  ELSE IF ( order .eq. 2 ) THEN
   IF ( EqualRealNos( t(1), t(2) ) ) THEN
     ErrStat = ErrID_Fatal
@@ -6943,6 +7908,7 @@ ENDIF
   END IF
   CALL MeshExtrapInterp2(u(1)%Y1Mesh, u(2)%Y1Mesh, u(3)%Y1Mesh, tin, u_out%Y1Mesh, tin_out, ErrStat, ErrMsg )
   CALL MeshExtrapInterp2(u(1)%Y2Mesh, u(2)%Y2Mesh, u(3)%Y2Mesh, tin, u_out%Y2Mesh, tin_out, ErrStat, ErrMsg )
+IF (ALLOCATED(u_out%WriteOutput) .AND. ALLOCATED(u(1)%WriteOutput)) THEN
   ALLOCATE(b1(SIZE(u_out%WriteOutput,1)))
   ALLOCATE(c1(SIZE(u_out%WriteOutput,1)))
   b1 = (t(3)**2*(u(1)%WriteOutput - u(2)%WriteOutput) + t(2)**2*(-u(1)%WriteOutput + u(3)%WriteOutput))/(t(2)*t(3)*(t(2) - t(3)))
@@ -6950,6 +7916,7 @@ ENDIF
   u_out%WriteOutput = u(1)%WriteOutput + b1 * t_out + c1 * t_out**2
   DEALLOCATE(b1)
   DEALLOCATE(c1)
+END IF ! check if allocated
  ELSE 
    ErrStat = ErrID_Fatal
    ErrMsg = ' order must be less than 3 in SD_Output_ExtrapInterp '

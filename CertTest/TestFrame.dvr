@@ -4,8 +4,8 @@ TRUE           Echo           - Echo the input file data (flag)
 ---------------------- ENVIRONMENTAL CONDITIONS --------------------------------
 9.81         Gravity        - Gravity (m/s^2)
 ---------------------- SubDyn ------------------------------------------------
-"C:\Dev\NREL_SVN\SubDyn\trunk\CertTest\testframe.txt"       SDInputFile
-"C:\Dev\NREL_SVN\SubDyn\trunk\CertTest\TestFrame"           OutRootName
+".\testframe.txt"       SDInputFile
+".\TestFrame"           OutRootName
 600           NSteps         - Number of time steps in the simulations (-)
 0.001          TimeInterval   - TimeInterval for the simulation (sec)
 0.0   0.0   40.0  TP_RefPoint - Location of the TP reference point in global coordinates (m)
