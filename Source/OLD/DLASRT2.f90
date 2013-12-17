@@ -1,5 +1,6 @@
  SUBROUTINE DLASRT2( ID, N, D, KEY, INFO )
 
+    USE NWTC_Library !RRD changed this line
 !  -- ScaLAPACK routine (version 1.7) --
 !     University of Tennessee, Knoxville, Oak Ridge National Laboratory,
 !!     and University of California, Berkeley.
@@ -11,7 +12,7 @@
 !     ..
 !     .. Array Arguments ..
      INTEGER            KEY( * )
-     DOUBLE PRECISION   D( * )
+     REAL(ReKi), INTENT(INOUT) ::   D(N)  !RRD changed this line
 !     ..
 
 !  Purpose
