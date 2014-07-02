@@ -1,6 +1,6 @@
 !**********************************************************************************************************************************
 ! LICENSING
-! Copyright (C) 2013  National Renewable Energy Laboratory
+! Copyright (C) 2013-2014  National Renewable Energy Laboratory
 !
 !    This file is part of the NWTC Subroutine Library.
 !
@@ -17,8 +17,8 @@
 ! limitations under the License.
 !
 !**********************************************************************************************************************************
-! File last committed: $Date: 2013-09-21 22:37:32 -0600 (Sat, 21 Sep 2013) $
-! (File) Revision #: $Rev: 175 $
+! File last committed: $Date: 2014-06-13 10:04:28 -0600 (Fri, 13 Jun 2014) $
+! (File) Revision #: $Rev: 237 $
 ! URL: $HeadURL: https://windsvn.nrel.gov/NWTC_Library/trunk/source/SysIVF.f90 $
 !**********************************************************************************************************************************
 MODULE SysSubs
@@ -34,16 +34,21 @@ MODULE SysSubs
 
    !     FUNCTION    FileSize( Unit )                                         ! Returns the size (in bytes) of an open file.
    !     SUBROUTINE  FlushOut ( Unit )
+   !     FUNCTION    NWTC_gamma( x )
    !     SUBROUTINE  GET_CWD( DirName, Status )
-   !     FUNCTION    Is_NaN( DblNum )                                                        ! Please use IEEE_IS_NAN() instead
+   !     FUNCTION    Is_NaN( DblNum )                                         ! Please use IEEE_IS_NAN() instead
+   !     FUNCTION    NWTC_Gamma( x )                                          ! Returns the gamma value of its argument.   
    ! per MLB, this can be removed, but only if CU is OUTPUT_UNIT:
    !     SUBROUTINE  OpenCon     ! Actually, it can't be removed until we get Intel's FLUSH working. (mlb)
    !     SUBROUTINE  OpenUnfInpBEFile ( Un, InFile, RecLen, Error )
    !     SUBROUTINE  ProgExit ( StatCode )
+   !     SUBROUTINE  Set_IEEE_Constants( NaN_D, Inf_D, NaN, Inf )   
    !     SUBROUTINE  UsrAlarm
    !     SUBROUTINE  WrNR ( Str )
    !     SUBROUTINE  WrOver ( Str )
    !     SUBROUTINE  WriteScr ( Str, Frm )
+   !     SUBROUTINE LoadDynamicLib( DLL, ErrStat, ErrMsg )
+   !     SUBROUTINE FreeDynamicLib( DLL, ErrStat, ErrMsg )
 
 
 
@@ -51,6 +56,12 @@ MODULE SysSubs
 
    IMPLICIT                        NONE
 
+   INTERFACE NWTC_gamma ! Returns the gamma value of its argument
+      MODULE PROCEDURE NWTC_gammaR4
+      MODULE PROCEDURE NWTC_gammaR8
+      MODULE PROCEDURE NWTC_gammaR16
+   END INTERFACE
+   
 
 !=======================================================================
 
@@ -65,7 +76,7 @@ MODULE SysSubs
    CHARACTER(10), PARAMETER      :: Endian      = 'BIG_ENDIAN'                      ! The internal format of numbers.
    CHARACTER(*),  PARAMETER      :: NewLine     = ACHAR(10)                         ! The delimiter for New Lines [ Windows is CHAR(13)//CHAR(10); MAC is CHAR(13); Unix is CHAR(10) {CHAR(13)=\r is a line feed, CHAR(10)=\n is a new line}]
    CHARACTER(*),  PARAMETER      :: OS_Desc     = 'Intel Visual Fortran for Windows'! Description of the language/OS
-   CHARACTER( 1), PARAMETER      :: PathSep     = '\'                               ! The path separater.
+   CHARACTER( 1), PARAMETER      :: PathSep     = '\'                               ! The path separator.
    CHARACTER( 1), PARAMETER      :: SwChar      = '/'                               ! The switch character for command-line options.
    CHARACTER(11), PARAMETER      :: UnfForm     = 'BINARY'                          ! The string to specify unformatted I/O files. (used in OpenUOutFile and OpenUInpFile [see TurbSim's .bin files])
 
@@ -187,6 +198,45 @@ CONTAINS
    RETURN
    END FUNCTION Is_NaN ! ( DblNum )
 !=======================================================================
+   FUNCTION NWTC_GammaR4( x )
+   
+      ! Returns the gamma value of its argument. The result has a value equal  
+      ! to a processor-dependent approximation to the gamma function of x. 
+
+      REAL(SiKi), INTENT(IN)     :: x             ! input 
+      REAL(SiKi)                 :: NWTC_GammaR4  ! result
+      
+      
+      NWTC_GammaR4 = gamma( x )
+   
+   END FUNCTION NWTC_GammaR4
+!=======================================================================
+   FUNCTION NWTC_GammaR8( x )
+   
+      ! Returns the gamma value of its argument. The result has a value equal  
+      ! to a processor-dependent approximation to the gamma function of x. 
+
+      REAL(R8Ki), INTENT(IN)     :: x             ! input 
+      REAL(R8Ki)                 :: NWTC_GammaR8  ! result
+      
+      
+      NWTC_GammaR8 = gamma( x )
+   
+   END FUNCTION NWTC_GammaR8
+!=======================================================================
+   FUNCTION NWTC_GammaR16( x )
+   
+      ! Returns the gamma value of its argument. The result has a value equal  
+      ! to a processor-dependent approximation to the gamma function of x. 
+
+      REAL(QuKi), INTENT(IN)     :: x             ! input 
+      REAL(QuKi)                 :: NWTC_GammaR16  ! result
+      
+      
+      NWTC_GammaR16 = gamma( x )
+   
+   END FUNCTION NWTC_GammaR16
+!=======================================================================
    SUBROUTINE OpenCon
 
 
@@ -287,6 +337,32 @@ CONTAINS
 
    END SUBROUTINE ProgExit ! ( StatCode )
 !=======================================================================
+   SUBROUTINE Set_IEEE_Constants( NaN_D, Inf_D, NaN, Inf )   
+   
+      ! routine that sets the values of NaN_D, Inf_D, NaN, Inf (IEEE 
+      ! values for not-a-number and infinity in sindle and double 
+      ! precision) This uses standard F03 intrinsic routines,  
+      ! however Gnu has not yet implemented it, so we've placed this
+      ! routine in the system-specific code.
+   
+      USE, INTRINSIC :: ieee_arithmetic  !use this for compilers that have implemented ieee_arithmetic from F03 standard (otherwise see logic in SysGnu*.f90)
+         
+      REAL(DbKi), INTENT(inout)           :: Inf_D          ! IEEE value for NaN (not-a-number) in double precision
+      REAL(DbKi), INTENT(inout)           :: NaN_D          ! IEEE value for Inf (infinity) in double precision
+
+      REAL(ReKi), INTENT(inout)           :: Inf            ! IEEE value for NaN (not-a-number)
+      REAL(ReKi), INTENT(inout)           :: NaN            ! IEEE value for Inf (infinity)
+   
+      
+      NaN_D = ieee_value(0.0_DbKi, ieee_quiet_nan)
+      Inf_D = ieee_value(0.0_DbKi, ieee_positive_inf)
+   
+      NaN   = ieee_value(0.0_ReKi, ieee_quiet_nan)
+      Inf   = ieee_value(0.0_ReKi, ieee_positive_inf)   
+   
+   
+   END SUBROUTINE Set_IEEE_Constants  
+!=======================================================================
    SUBROUTINE UsrAlarm
 
 
@@ -371,7 +447,7 @@ CONTAINS
 !==================================================================================================================================
 SUBROUTINE LoadDynamicLib ( DLL, ErrStat, ErrMsg )
 
-      ! This SUBROUTINE is used to load the DLL.
+      ! This SUBROUTINE is used to dynamically load a DLL.
 
    USE               IFWINTY,  ONLY : HANDLE, LPVOID
    USE               kernel32, ONLY : LoadLibrary, GetProcAddress
@@ -423,7 +499,7 @@ END SUBROUTINE LoadDynamicLib
 !==================================================================================================================================
 SUBROUTINE FreeDynamicLib ( DLL, ErrStat, ErrMsg )
 
-      ! This SUBROUTINE is used to free the DLL.
+      ! This SUBROUTINE is used to free a dynamically loaded DLL (loaded in LoadDynamicLib).
 
    USE               IFWINTY,  ONLY : BOOL, HANDLE, FALSE !, LPVOID
    USE               kernel32, ONLY : FreeLibrary

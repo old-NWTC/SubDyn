@@ -17,8 +17,8 @@
 ! limitations under the License.
 !
 !**********************************************************************************************************************************
-! File last committed: $Date: 2013-09-21 22:37:32 -0600 (Sat, 21 Sep 2013) $
-! (File) Revision #: $Rev: 175 $
+! File last committed: $Date: 2014-06-13 10:04:28 -0600 (Fri, 13 Jun 2014) $
+! (File) Revision #: $Rev: 237 $
 ! URL: $HeadURL: https://windsvn.nrel.gov/NWTC_Library/trunk/source/SysGnuWin.f90 $
 !**********************************************************************************************************************************
 MODULE SysSubs
@@ -35,15 +35,19 @@ MODULE SysSubs
    !     FUNCTION    FileSize( Unit )                                         ! Returns the size (in bytes) of an open file.
    !     SUBROUTINE  FlushOut ( Unit )
    !     SUBROUTINE  GET_CWD( DirName, Status )
-   !     FUNCTION    Is_NaN( DblNum )                                         ! Please use IEEE_IS_NAN() instead (not yet implemented in gfortran)
+   !     FUNCTION    Is_NaN( DblNum )                                         ! Please use IEEE_IS_NAN() instead
+   !     FUNCTION    NWTC_Gamma( x )                                          ! Returns the gamma value of its argument.   
    ! per MLB, this can be removed, but only if CU is OUTPUT_UNIT:
    !     SUBROUTINE  OpenCon                                                  ! Actually, it can't be removed until we get Intel's FLUSH working. (mlb)
    !     SUBROUTINE  OpenUnfInpBEFile ( Un, InFile, RecLen, Error )
    !     SUBROUTINE  ProgExit ( StatCode )
+   !     SUBROUTINE  Set_IEEE_Constants( NaN_D, Inf_D, NaN, Inf )   
    !     SUBROUTINE  UsrAlarm
    !     SUBROUTINE  WrNR ( Str )
    !     SUBROUTINE  WrOver ( Str )
    !     SUBROUTINE  WriteScr ( Str, Frm )
+   !     SUBROUTINE LoadDynamicLib( DLL, ErrStat, ErrMsg )
+   !     SUBROUTINE FreeDynamicLib( DLL, ErrStat, ErrMsg )
 
 
 
@@ -51,7 +55,13 @@ MODULE SysSubs
 
    IMPLICIT                        NONE
 
+   INTERFACE NWTC_gamma ! Returns the gamma value of its argument
+      MODULE PROCEDURE NWTC_gammaR4
+      MODULE PROCEDURE NWTC_gammaR8
+      MODULE PROCEDURE NWTC_gammaR16
+   END INTERFACE
 
+   
 !=======================================================================
 
 
@@ -66,7 +76,7 @@ MODULE SysSubs
    CHARACTER(10), PARAMETER      :: Endian      = 'BIG_ENDIAN'                      ! The internal format of numbers.
    CHARACTER(*),  PARAMETER      :: NewLine     = ACHAR(10)                         ! The delimiter for New Lines [ Windows is CHAR(13)//CHAR(10); MAC is CHAR(13); Unix is CHAR(10) {CHAR(13)=\r is a line feed, CHAR(10)=\n is a new line}]
    CHARACTER(*),  PARAMETER      :: OS_Desc     = 'GNU Fortran for Windows'         ! Description of the language/OS
-   CHARACTER( 1), PARAMETER      :: PathSep     = '\'                               ! The path separater.
+   CHARACTER( 1), PARAMETER      :: PathSep     = '\'                               ! The path separator.
    CHARACTER( 1), PARAMETER      :: SwChar      = '/'                               ! The switch character for command-line options.
    CHARACTER(11), PARAMETER      :: UnfForm     = 'UNFORMATTED'                     ! The string to specify unformatted I/O files.
 
@@ -176,6 +186,45 @@ CONTAINS
    RETURN
    END FUNCTION Is_NaN ! ( DblNum )
 !=======================================================================
+   FUNCTION NWTC_GammaR4( x )
+   
+      ! Returns the gamma value of its argument. The result has a value equal  
+      ! to a processor-dependent approximation to the gamma function of x. 
+
+      REAL(SiKi), INTENT(IN)     :: x             ! input 
+      REAL(SiKi)                 :: NWTC_GammaR4  ! result
+      
+      
+      NWTC_GammaR4 = gamma( x )
+   
+   END FUNCTION NWTC_GammaR4
+!=======================================================================
+   FUNCTION NWTC_GammaR8( x )
+   
+      ! Returns the gamma value of its argument. The result has a value equal  
+      ! to a processor-dependent approximation to the gamma function of x. 
+
+      REAL(R8Ki), INTENT(IN)     :: x             ! input 
+      REAL(R8Ki)                 :: NWTC_GammaR8  ! result
+      
+      
+      NWTC_GammaR8 = gamma( x )
+   
+   END FUNCTION NWTC_GammaR8
+!=======================================================================
+   FUNCTION NWTC_GammaR16( x )
+   
+      ! Returns the gamma value of its argument. The result has a value equal  
+      ! to a processor-dependent approximation to the gamma function of x. 
+
+      REAL(QuKi), INTENT(IN)     :: x             ! input 
+      REAL(QuKi)                 :: NWTC_GammaR16  ! result
+      
+      
+      NWTC_GammaR16 = gamma( x )
+   
+   END FUNCTION NWTC_GammaR16
+!=======================================================================
  SUBROUTINE OpenCon
 
 
@@ -267,6 +316,49 @@ CONTAINS
 
 
    END SUBROUTINE ProgExit ! ( StatCode )
+!=======================================================================
+   SUBROUTINE Set_IEEE_Constants( NaN_D, Inf_D, NaN, Inf )   
+         
+      ! routine that sets the values of NaN_D, Inf_D, NaN, Inf (IEEE 
+      ! values for not-a-number and infinity in sindle and double 
+      ! precision) F03 has standard intrinsic routines to do this,  
+      ! but Gnu has not yet implemented it. This code will fail if  
+      ! the compiler checks for floating-point-error, hence the  
+      ! compiler directive FPE_TRAP_ENABLED.
+   
+   
+      REAL(DbKi), INTENT(inout)           :: Inf_D          ! IEEE value for NaN (not-a-number) in double precision
+      REAL(DbKi), INTENT(inout)           :: NaN_D          ! IEEE value for Inf (infinity) in double precision
+
+      REAL(ReKi), INTENT(inout)           :: Inf            ! IEEE value for NaN (not-a-number)
+      REAL(ReKi), INTENT(inout)           :: NaN            ! IEEE value for Inf (infinity)
+   
+         ! local variables for getting values of NaN and Inf (not necessary when using ieee_arithmetic)
+      REAL(DbKi)                          :: Neg_D          ! a negative real(DbKi) number
+      REAL(ReKi)                          :: Neg            ! a negative real(ReKi) number
+   
+      
+         ! if compiling with floating-point-exception traps, this will not work, so we've added a compiler directive.
+         !  note that anything that refers to NaN or Inf will be incorrect in that case.
+         
+#ifndef FPE_TRAP_ENABLED      
+         ! set variables to negative numbers to calculate NaNs (compilers may complain when taking sqrt of negative constants)
+      Neg_D = -1.0_DbKi
+      Neg   = -1.0_ReKi
+
+      NaN_D = SQRT ( Neg_D )
+      NaN   = SQRT ( Neg )
+
+         ! set variables to zero to calculate Infs (using division by zero)
+      Neg_D = 0.0_DbKi
+      Neg   = 0.0_ReKi
+      
+      Inf_D = 1.0_DbKi / Neg_D
+      Inf   = 1.0_ReKi / Neg
+#endif 
+   
+   END SUBROUTINE Set_IEEE_Constants  
+
 !=======================================================================
    SUBROUTINE UsrAlarm
 
@@ -368,7 +460,7 @@ CONTAINS
 !==================================================================================================================================
 SUBROUTINE LoadDynamicLib ( DLL, ErrStat, ErrMsg )
 
-      ! This SUBROUTINE is used to load the DLL.
+      ! This SUBROUTINE is used to dynamically load a DLL.
 
       ! Passed Variables:
 
@@ -438,7 +530,7 @@ END SUBROUTINE LoadDynamicLib
 !==================================================================================================================================
 SUBROUTINE FreeDynamicLib ( DLL, ErrStat, ErrMsg )
 
-      ! This SUBROUTINE is used to free the DLL.
+      ! This SUBROUTINE is used to free a dynamically loaded DLL (loaded in LoadDynamicLib).
 
       ! Passed Variables:
 

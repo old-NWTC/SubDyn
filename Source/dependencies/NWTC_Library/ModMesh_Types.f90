@@ -1,6 +1,6 @@
 !**********************************************************************************************************************************
 ! LICENSING
-! Copyright (C) 2013  National Renewable Energy Laboratory
+! Copyright (C) 2013-2014  National Renewable Energy Laboratory
 !
 !    This file is part of the NWTC Subroutine Library.
 !
@@ -17,8 +17,8 @@
 ! limitations under the License.
 !
 !**********************************************************************************************************************************
-! File last committed: $Date: 2013-11-26 22:34:06 -0700 (Tue, 26 Nov 2013) $
-! (File) Revision #: $Rev: 185 $
+! File last committed: $Date: 2014-06-13 10:04:28 -0600 (Fri, 13 Jun 2014) $
+! (File) Revision #: $Rev: 237 $
 ! URL: $HeadURL: https://windsvn.nrel.gov/NWTC_Library/trunk/source/ModMesh_Types.f90 $
 !**********************************************************************************************************************************
 MODULE ModMesh_Types
@@ -73,9 +73,10 @@ MODULE ModMesh_Types
        "Hex20  ","Wedge6 ","Wedge15"                   /)
 
 
-   INTEGER, PUBLIC, PARAMETER :: MESH_NEWCOPY  = 1
-   INTEGER, PUBLIC, PARAMETER :: MESH_SIBLING  = 2
-   INTEGER, PUBLIC, PARAMETER :: MESH_UPDATECOPY  = 3
+   INTEGER, PUBLIC, PARAMETER :: MESH_NEWCOPY         = 1
+   INTEGER, PUBLIC, PARAMETER :: MESH_SIBLING         = 2
+   INTEGER, PUBLIC, PARAMETER :: MESH_UPDATECOPY      = 3
+   INTEGER, PUBLIC, PARAMETER :: MESH_UPDATEREFERENCE = 4
 
    INTEGER, PUBLIC, PARAMETER :: MESH_NEXT  = -2
    INTEGER, PUBLIC, PARAMETER :: MESH_NOMOREELEMS  = -3

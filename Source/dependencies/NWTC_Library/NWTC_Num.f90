@@ -1,6 +1,6 @@
 !**********************************************************************************************************************************
 ! LICENSING
-! Copyright (C) 2013  National Renewable Energy Laboratory
+! Copyright (C) 2013-2014  National Renewable Energy Laboratory
 !
 !    This file is part of the NWTC Subroutine Library.
 !
@@ -17,8 +17,8 @@
 ! limitations under the License.
 !
 !**********************************************************************************************************************************
-! File last committed: $Date: 2013-11-07 12:13:14 -0700 (Thu, 07 Nov 2013) $
-! (File) Revision #: $Rev: 184 $
+! File last committed: $Date: 2014-06-13 10:04:28 -0600 (Fri, 13 Jun 2014) $
+! (File) Revision #: $Rev: 237 $
 ! URL: $HeadURL: https://windsvn.nrel.gov/NWTC_Library/trunk/source/NWTC_Num.f90 $
 !**********************************************************************************************************************************
 MODULE NWTC_Num
@@ -40,19 +40,21 @@ MODULE NWTC_Num
    !  SUBROUTINE Eye                   ( A, ErrStat, ErrMsg )                                         ! sets A equal to the identity matrix (A can have 2 or 3 dimensions)
    !  SUBROUTINE GaussElim             ( AugMat, NumEq, x, ErrStat, ErrMsg )                          ! Performs Gauss-Jordan elimination to solve Ax=b for x; AugMat = [A b]
    !  SUBROUTINE GetOffsetReg          ( Ary, NumPts, Val, Ind, Fract, ErrStat, ErrMsg )              ! Determine index of the point in Ary just below Val and the fractional distance to the next point in the array.
+   !  FUNCTION   GetSmllRotAngs        ( DCMat, ErrStat, ErrMsg )
    !  SUBROUTINE GL_Pts                ( IPt, NPts, Loc, Wt [, ErrStat] )
    !  FUNCTION   IndexCharAry          ( CVal, CAry )
    !  FUNCTION   InterpBin             ( XVal, XAry, YAry, ILo, AryLen )                              ! Generic interface for InterpBinComp and InterpBinReal.
-   !  FUNCTION   InterpBinComp         ( XVal, XAry, YAry, ILo, AryLen )
-   !  FUNCTION   InterpBinReal         ( XVal, XAry, YAry, ILo, AryLen )
+   !     FUNCTION   InterpBinComp      ( XVal, XAry, YAry, ILo, AryLen )
+   !     FUNCTION   InterpBinReal      ( XVal, XAry, YAry, ILo, AryLen )
    !  FUNCTION   InterpStp             ( XVal, XAry, YAry, ILo, AryLen )                              ! Generic interface for InterpStpComp and InterpStpReal.
-   !  FUNCTION   InterpStpComp         ( XVal, XAry, YAry, Ind, AryLen )
-   !  FUNCTION   InterpStpReal         ( XVal, XAry, YAry, Ind, AryLen )
+   !     FUNCTION   InterpStpComp      ( XVal, XAry, YAry, Ind, AryLen )
+   !     FUNCTION   InterpStpReal      ( XVal, XAry, YAry, Ind, AryLen )
    !  FUNCTION   IsSymmetric           ( A )                                                          ! Function to determine if A(:,:) is symmetric
    !  SUBROUTINE LocateBin             ( XVal, XAry, Ind, AryLen )
    !  SUBROUTINE LocateStp             ( XVal, XAry, Ind, AryLen )
    !  FUNCTION   Mean                  ( Ary, AryLen )                                                ! Function to calculate the mean value of a vector array.
    !  SUBROUTINE MPi2Pi                ( Angle )
+   !  SUBROUTINE Zero2TwoPi            ( Angle )   
    !  SUBROUTINE RegCubicSplineInit    ( AryLen, XAry, YAry, DelX, Coef )                             ! Calculate coefficients for regularly spaced array to use cubic splines.
    !  SUBROUTINE RegCubicSplineInitM   ( XAry, YAry, DelX, Coef, ErrStat, ErrMsg )                    ! Interpolate using cubic splines for multiple tables of regularly space data.
    !  FUNCTION   RegCubicSplineInterp  ( X, AryLen, XAry, YAry, DelX, Coef )                          ! Interpolate a regularly spaced array using cubic splines.
@@ -62,8 +64,8 @@ MODULE NWTC_Num
    !  SUBROUTINE SmllRotTrans          ( RotationType, Theta1, Theta2, Theta3, TransMat, ErrTxt )
    !  SUBROUTINE SortUnion             ( Ary1, N1, Ary2, N2, Ary, N )
    !  FUNCTION   StdDevFn              ( Ary, AryLen, Mean )                                          ! Function to calculate the standard deviation of a vector array.
-
-
+   !  SUBROUTINE Zero2TwoPi            ( Angle )
+   
    USE                                          NWTC_IO
 
    IMPLICIT NONE
@@ -98,7 +100,6 @@ MODULE NWTC_Num
    REAL(ReKi)                                :: TwoByPi                       ! 2/Pi
    REAL(ReKi)                                :: TwoPi                         ! 2*Pi
 
-   INTEGER, ALLOCATABLE                      :: IntIndx  (:,:)                ! The array of indices holding that last index used for interpolation in IntBlade()
 
    TYPE, PUBLIC               :: CubSplineType                                ! This derived type is used to hold data for performing cubic splines.
       INTEGER                                :: NumPts                        ! The number of points in the XAry and YAry arrays.
@@ -216,7 +217,7 @@ CONTAINS
    SUBROUTINE BSortReal ( RealAry, NumPts )
 
 
-      ! This routine sorts a list of real numbers.  It uses the buble sort algorithm,
+      ! This routine sorts a list of real numbers.  It uses the bubble sort algorithm,
       ! which is only suitable for short lists.
 
 
@@ -1026,8 +1027,9 @@ CONTAINS
    DO L = 1,NumEq             ! Loop through all rows
 
       IF ( EqualRealNos( AugMat(L,L), 0.0_ReKi ) ) THEN
-         ErrStat = ErrID_Warn
+         ErrStat = ErrID_Fatal
          ErrMsg  = 'Division by zero in NWTC Library subroutine GaussElim.'
+         RETURN
       END IF
 
       DO I = ( L + 1 ), NAug  ! Loop through all columns above current row number
@@ -1201,7 +1203,9 @@ CONTAINS
    FUNCTION GetSmllRotAngs ( DCMat, ErrStat, ErrMsg )
 
       ! This subroutine computes the angles that make up the input direction cosine matrix, DCMat
-
+      ! It is the inverse of SmllRotTrans()
+      
+      
       ! passed variables
 
    REAL(ReKi), INTENT(IN )            :: DCMat          (3,3)
@@ -1892,11 +1896,9 @@ CONTAINS
 !=======================================================================
    FUNCTION Mean ( Ary, AryLen )
 
-
-   !NOTE: We should make AryLen an optional argument and use SIZE( Ary ) if it is not present.
-
       ! This routine calculates the mean value of an array.
 
+   !NOTE: We should make AryLen an optional argument and use SIZE( Ary ) if it is not present.
 
       ! Function declaration.
 
@@ -1932,10 +1934,9 @@ CONTAINS
 !=======================================================================
    SUBROUTINE MPi2Pi ( Angle )
 
-
-      ! This routine ensures that Angle lies between -pi and pi.
-
-
+      ! This routine is used to convert Angle to an equivalent value
+      !  between -pi and pi.
+                 
       ! Argument declarations:
 
    REAL(ReKi), INTENT(INOUT)    :: Angle
@@ -2561,13 +2562,6 @@ CONTAINS
 
          ! This routine computes numeric constants stored in the NWTC Library
 
-         !   USE, INTRINSIC :: ieee_arithmetic  !use this for compilers that have implemented
-
-         ! local variables for getting values of NaN and Inf (not necessary when using ieee_arithmetic)
-      REAL(DbKi)                          :: Neg_D          ! a negative real(DbKi) number
-      REAL(ReKi)                          :: Neg            ! a negative real(ReKi) number
-
-
          ! Constants based upon Pi:
 
       Pi_D      = ACOS( -1.0_DbKi )
@@ -2592,25 +2586,8 @@ CONTAINS
 
 
          ! IEEE constants:
-
-   !   NaN_D = ieee_value(0.0_DbKi, ieee_quiet_nan)
-   !   Inf_D = ieee_value(0.0_DbKi, ieee_positive_inf)
-   !
-   !   NaN   = ieee_value(0.0_ReKi, ieee_quiet_nan)
-   !   Inf   = ieee_value(0.0_DbKi, ieee_positive_inf)
-
-#ifndef FPE_TRAP_ENABLED
-         ! set variables to negative numbers to calculate NaNs (compilers may complain when taking sqrt of negative constants)
-      Neg   = -1.0_ReKi
-      Neg_D = -1.0_DbKi
-
-      NaN_D = SQRT ( Neg_D )
-      Inf_D = Pi_D / 0.0_DbKi
-
-      NaN   = SQRT ( Neg )
-      Inf   = Pi / 0.0_ReKi
-#endif
-
+      CALL Set_IEEE_Constants( NaN_D, Inf_D, NaN, Inf )
+      
 
    RETURN
    END SUBROUTINE SetConstants
@@ -2630,7 +2607,7 @@ CONTAINS
       !      {x1}   [TransMat(Theta1, ] {X1}
       !      {x2} = [         Theta2, ]*{X2}
       !      {x3}   [         Theta3 )] {X3}
-
+      !
       ! The transformation matrix, TransMat, is the closest orthonormal
       !   matrix to the nonorthonormal, but skew-symmetric, Bernoulli-Euler
       !   matrix:
@@ -2647,12 +2624,12 @@ CONTAINS
       !   (SVD) of A = U*S*V^T where S is a diagonal matrix containing the
       !   singular values of A, which are SQRT( eigenvalues of A*A^T ) =
       !   SQRT( eigenvalues of A^T*A ).
-
+      !
       ! The algebraic form of the transformation matrix, as implemented
       !   below, was derived symbolically by J. Jonkman by computing U*V^T
       !   by hand with verification in Mathematica.
-
-
+      !
+      ! This routine is the inverse of GetSmllRotAngs()
 
       ! Passed Variables:
 
@@ -2852,6 +2829,33 @@ CONTAINS
 
    RETURN
    END FUNCTION StdDevFn ! ( Ary, AryLen, Mean )
+!=======================================================================
+   SUBROUTINE Zero2TwoPi ( Angle )
+
+      ! This routine is used to convert Angle to an equivalent value
+      !  between 0 and 2*pi.
+      
+
+      ! Argument declarations:
+
+   REAL(ReKi), INTENT(INOUT)    :: Angle
+
+
+
+      ! Get the angle between 0 and 2Pi.
+
+   Angle = MODULO( Angle, TwoPi )   
+
+
+      ! Check numerical case where Angle == 2Pi.
+
+   IF ( Angle == TwoPi )  THEN
+      Angle = 0.0_ReKi
+   END IF
+
+
+   RETURN
+   END SUBROUTINE Zero2TwoPi   
 !=======================================================================
 
 END MODULE NWTC_Num

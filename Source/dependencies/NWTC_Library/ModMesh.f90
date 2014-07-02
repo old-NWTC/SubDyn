@@ -1,6 +1,6 @@
 !**********************************************************************************************************************************
 ! LICENSING
-! Copyright (C) 2013  National Renewable Energy Laboratory
+! Copyright (C) 2013-2014  National Renewable Energy Laboratory
 !
 !    This file is part of the NWTC Subroutine Library.
 !
@@ -17,11 +17,27 @@
 ! limitations under the License.
 !
 !**********************************************************************************************************************************
-! File last committed: $Date: 2013-11-26 22:34:06 -0700 (Tue, 26 Nov 2013) $
-! (File) Revision #: $Rev: 185 $
+! File last committed: $Date: 2014-06-17 09:36:15 -0600 (Tue, 17 Jun 2014) $
+! (File) Revision #: $Rev: 239 $
 ! URL: $HeadURL: https://windsvn.nrel.gov/NWTC_Library/trunk/source/ModMesh.f90 $
 !**********************************************************************************************************************************
 MODULE ModMesh
+
+ ! The modules ModMesh and ModMesh_Types provide data structures and subroutines for representing and manipulating meshes
+ ! and meshed data in the FAST modular framework. 
+ !
+ ! A mesh is comprised of a set of “nodes” (simple points in space) together with information specifying how they are connected 
+ ! to form “elements”  representing spatial boundaries between components. ModMesh and ModMesh_Types define point, line, surface, 
+ ! and volume elements in a standard isoparametric mapping from finite element analysis. Currently only points and straight line 
+ ! (line2) elements are implemented.
+ ! Associated with a mesh are one or more “fields” that represent the values of variables or “degrees of freedom” at each node. 
+ ! A mesh always has a named “Position” that specifies the location in three-dimensional space as an Xi,Yi,Zi triplet of each node 
+ ! and a field named “RefOrientation” that specifies the orientation (as a direction cosine matrix) of the node. 
+ ! The ModMesh_Types module predefines a number of other fields of triples representing velocities, forces, and moments as well as
+ ! a field of nine values representing a direction cosine matrix. 
+ ! The operations on meshes defined in the ModMesh module are creation, spatio-location of nodes, construction, committing the 
+ ! mesh definition, initialization of fields, accessing field data, updating field data, copying, deallocating, and destroying meshes. 
+ ! See https://wind.nrel.gov/designcodes/simulators/developers/docs/ProgrammingHandbook_Mod20130326.pdf
 
 !======================================================================================================================
 ! WARNING:  Because this code uses some preprocessor directives to comment out code
@@ -51,12 +67,12 @@ CONTAINS
 
    !-------------------------------------------------------------------------------------------------------------------------------
    SUBROUTINE MeshWrBin ( UnIn, M, ErrStat, ErrMsg, FileName)
-   !...............................................................................................................................
-   ! This routine writes mesh information in binary form. If UnIn is < 0, it gets a new unit number and opens the file,
-   ! otherwise the file is appended. It is up to the caller of this routine to close the file when it's finished.
-   !...............................................................................................................................
+      ! This routine writes mesh information in binary form. If UnIn is < 0, it gets a new unit number and opens the file,
+      ! otherwise the file is appended. It is up to the caller of this routine to close the file when it's finished.
+
+      
       INTEGER, INTENT(INOUT)                ::  UnIn     ! fortran output unit
-      TYPE(MeshType),INTENT(IN)          ::      M    ! mesh to be reported on
+      TYPE(MeshType),  INTENT(IN)           ::  M        ! mesh to be reported on
 
       INTEGER(IntKi),  INTENT(OUT)          :: ErrStat   ! Indicates whether an error occurred (see NWTC_Library)
       CHARACTER(*),    INTENT(OUT)          :: ErrMsg    ! Error message associated with the ErrStat
@@ -85,7 +101,9 @@ CONTAINS
       !...........
       ! Write nodal information:
       !...........
-
+      
+      IF (.NOT. M%Initialized) RETURN
+      
       WRITE (UnIn, IOSTAT=ErrStat2)   M%Position
          IF ( ErrStat2 /= 0 ) THEN
             CALL CheckError( ErrID_Fatal, 'Error writing Position to the mesh binary file.' )
@@ -202,8 +220,8 @@ CONTAINS
 
          IF ( ErrID /= ErrID_None ) THEN
 
-            IF ( LEN_TRIM(ErrMsg) > 0 ) ErrMsg = TRIM(ErrMsg)//NewLine
-            ErrMsg = TRIM(ErrMsg)//' '//TRIM(Msg)
+            IF ( ErrStat /= ErrID_None ) ErrMsg = TRIM(ErrMsg)//NewLine
+            ErrMsg = TRIM(ErrMsg)//'MeshWrBin:'//TRIM(Msg)
             ErrStat = MAX(ErrStat, ErrID)
 
             !......................................................................................................................
@@ -221,16 +239,18 @@ CONTAINS
 
 
    SUBROUTINE MeshPrintInfo ( U, M, N)
+   
+      ! This routine writes mesh information in text form. If is used for debugging.
+   
+   
      INTEGER, INTENT(IN   )                ::      U  ! fortran output unit
-     TYPE(MeshType),INTENT(INOUT)          ::      M  ! mesh to be reported on
+     TYPE(MeshType),INTENT(IN   )          ::      M  ! mesh to be reported on
      INTEGER, OPTIONAL,INTENT(IN   )       ::      N  ! Number to print, default 5
     ! Local
-     INTEGER isz,i,j,nn,CtrlCode,Ielement,Xelement
-     INTEGER                    :: ErrStat
-     CHARACTER(256)             :: ErrMess
+     INTEGER isz,i,j,nn,Ielement,Xelement
 
-     nn = 5
-     IF (PRESENT(N)) nn = N
+     nn = M%Nnodes !5
+     IF (PRESENT(N)) nn = min(nn,N)
 
      write(U,*)'-----------  MeshPrintInfo:  -------------'
 
@@ -357,33 +377,46 @@ CONTAINS
        ENDDO
      ENDIF
      write(U,*)'--------- Traverse Element List ----------'
-     CtrlCode = 0
-     CALL MeshNextElement( M, CtrlCode, ErrStat, ErrMess, Ielement=Ielement, Xelement=Xelement )
-     IF (ErrStat >= AbortErrLev) THEN
-        WRITE(U,*) ' Error in MeshNextElement(): '
-        WRITE(U,*) TRIM(ErrMess)
-        CtrlCode = MESH_NOMORE
-      END IF
-
-     DO WHILE ( CtrlCode .NE. MESH_NOMORE )
-
-       WRITE(U,'("  Ielement: ",I10,1x,A," det_jac: ",ES15.7," Nodes:",'//&
+     
+     DO Ielement=1,M%nelemlist
+        Xelement = M%ElemList(Ielement)%Element%Xelement
+        
+        WRITE(U,'("  Ielement: ",I10,1x,A," det_jac: ",ES15.7," Nodes:",'//&
                 Num2LStr( size(M%ElemList(Ielement)%Element%ElemNodes) )//'(1x,I10))') &
                     Ielement,&
                     ElemNames(Xelement), &
                     M%ElemList(Ielement)%Element%det_jac,  &
-                    M%ElemList(Ielement)%Element%ElemNodes
-       
-       
-       CtrlCode = MESH_NEXT
-       CALL MeshNextElement( M, CtrlCode, ErrStat, ErrMess, Ielement=Ielement, Xelement=Xelement )
-        IF (ErrStat >= AbortErrLev) THEN
-           WRITE(U,*) ' Error in MeshNextElement(): '
-           WRITE(U,*) TRIM(ErrMess)
-           RETURN
-         END IF
+                    M%ElemList(Ielement)%Element%ElemNodes                      
+     END DO 
+     
+     
+     !CtrlCode = 0
+     !CALL MeshNextElement( M, CtrlCode, ErrStat, ErrMess, Ielement=Ielement, Xelement=Xelement )
+     !IF (ErrStat >= AbortErrLev) THEN
+     !   WRITE(U,*) ' Error in MeshNextElement(): '
+     !   WRITE(U,*) TRIM(ErrMess)
+     !   CtrlCode = MESH_NOMORE
+     ! END IF
 
-     ENDDO
+     !DO WHILE ( CtrlCode .NE. MESH_NOMORE )
+     !
+     !  WRITE(U,'("  Ielement: ",I10,1x,A," det_jac: ",ES15.7," Nodes:",'//&
+     !           Num2LStr( size(M%ElemList(Ielement)%Element%ElemNodes) )//'(1x,I10))') &
+     !               Ielement,&
+     !               ElemNames(Xelement), &
+     !               M%ElemList(Ielement)%Element%det_jac,  &
+     !               M%ElemList(Ielement)%Element%ElemNodes
+     !  
+     !  
+     !  CtrlCode = MESH_NEXT
+     !  CALL MeshNextElement( M, CtrlCode, ErrStat, ErrMess, Ielement=Ielement, Xelement=Xelement )
+     !   IF (ErrStat >= AbortErrLev) THEN
+     !      WRITE(U,*) ' Error in MeshNextElement(): '
+     !      WRITE(U,*) TRIM(ErrMess)
+     !      RETURN
+     !    END IF
+     !
+     !ENDDO
      write(U,*)'---------  End of Element List  ----------'
 
    END SUBROUTINE MeshPrintInfo
@@ -409,6 +442,12 @@ CONTAINS
                           ,IsNewSibling                                                    &
                          )
 
+   
+      ! Takes a blank, uninitialized instance of Type(MeshType) and defines the number of nodes in the mesh. Optional 
+      ! arguments indicate the fields that will be allocated and associated with the nodes of the mesh. The fields that may 
+      ! be associated with the mesh nodes are Force, Moment, Orientation, Rotation, TranslationDisp, RotationVel, TranslationVel, 
+      ! RotationAcc, TranslationAcc, and an arbitrary number of Scalars. See the definition of ModMeshType for descriptions of these fields.  
+   
       TYPE(MeshType), INTENT(INOUT)   :: BlankMesh ! Mesh to be created
       INTEGER,INTENT(IN)         :: IOS                  ! input (COMPONENT_INPUT), output(COMPONENT_OUTPUT), or state(COMPONENT_STATE)
       INTEGER,INTENT(IN)         :: Nnodes               ! Number of nodes in mesh
@@ -469,6 +508,9 @@ CONTAINS
       IF ( .NOT. IsNewSib ) THEN
          CALL AllocPAry( BlankMesh%Position, 3, Nnodes, 'MeshCreate: Position' )
          CALL AllocPAry( BlankMesh%RefOrientation, 3, 3, Nnodes, 'MeshCreate: RefOrientation' )
+            ! initialize these variables:
+            BlankMesh%Position = 0.0_ReKi
+            CALL Eye(BlankMesh%RefOrientation, ErrStat, ErrMess)
 
          ALLOCATE(BlankMesh%ElemTable(NELEMKINDS))
          DO i = 1, NELEMKINDS
@@ -589,15 +631,6 @@ CONTAINS
          ! Let's make sure that we have all the necessary fields:
          !........................
       IF ( IsMotion .AND. IOS == COMPONENT_INPUT ) THEN
-!bjj: this can be removed with next round of mesh mapping algorighms
-         IF ( .NOT. BlankMesh%FieldMask(MASKID_Orientation) ) THEN
-            CALL AllocAry( BlankMesh%Orientation, 3, 3, Nnodes, 'MeshCreate: Orientation', ErrStat, ErrMess )
-            IF (ErrStat >= AbortErrLev) RETURN
-            CALL Eye(BlankMesh%Orientation, ErrStat, ErrMess)  ! set this orientation to the identity matrix
-            BlankMesh%FieldMask(MASKID_ORIENTATION) = .TRUE.
-         !   ErrStat = ErrID_Info
-         !   ErrMess = ' MeshCreate: Meshes with motion fields must also contain the Orientation field.'
-         END IF
 
          IF ( .NOT. BlankMesh%FieldMask(MASKID_TRANSLATIONDISP)) THEN
             CALL AllocAry( BlankMesh%TranslationDisp, 3, Nnodes, 'MeshCreate: TranslationDisp', ErrStat, ErrMess )
@@ -615,6 +648,11 @@ CONTAINS
    END SUBROUTINE MeshCreate
 
    RECURSIVE SUBROUTINE MeshDestroy ( Mesh, ErrStat, ErrMess, IgnoreSibling )
+    ! Destroy the given mesh and deallocate all of its data. If the optional IgnoreSibling argument 
+    ! is set to TRUE, destroying a sibling in a set has no effect on the other siblings other than 
+    ! to remove the victim from the list of siblings. If IgnoreSibling is omitted or is set to FALSE, 
+    ! all of the other siblings in the set will be destroyed as well.
+
      TYPE(MeshType),  INTENT(INOUT) :: Mesh            ! Mesh to be vaporized
      INTEGER(IntKi),  INTENT(OUT)   :: ErrStat         ! Error status/code
      CHARACTER(*),    INTENT(OUT)   :: ErrMess         ! Error message
@@ -629,7 +667,7 @@ CONTAINS
 
     ! Local
       LOGICAL IgSib
-      INTEGER i, j, k
+      INTEGER i, j
 
       ErrStat = ErrID_None
 
@@ -653,33 +691,6 @@ CONTAINS
       IF ( ALLOCATED(Mesh%TranslationAcc) ) DEALLOCATE(Mesh%TranslationAcc)
       IF ( ALLOCATED(Mesh%Scalars)        ) DEALLOCATE(Mesh%Scalars)
       
-
-
-!#if 0
-     !IF (ASSOCIATED(Mesh%element_point))     NULLIFY(Mesh%element_point)
-     !IF (ASSOCIATED(Mesh%element_line2))     NULLIFY(Mesh%element_line2)
-     !IF (ASSOCIATED(Mesh%element_line3))     NULLIFY(Mesh%element_line3)
-     !IF (ASSOCIATED(Mesh%element_tri3))      NULLIFY(Mesh%element_tri3)
-     !IF (ASSOCIATED(Mesh%element_tri6))      NULLIFY(Mesh%element_tri6)
-     !IF (ASSOCIATED(Mesh%element_quad4))     NULLIFY(Mesh%element_quad4)
-     !IF (ASSOCIATED(Mesh%element_quad8))     NULLIFY(Mesh%element_quad8)
-     !IF (ASSOCIATED(Mesh%element_tet4))      NULLIFY(Mesh%element_tet4)
-     !IF (ASSOCIATED(Mesh%element_tet10))     NULLIFY(Mesh%element_tet10)
-     !IF (ASSOCIATED(Mesh%element_hex8))      NULLIFY(Mesh%element_hex8)
-     !IF (ASSOCIATED(Mesh%element_hex20))     NULLIFY(Mesh%element_hex20)
-     !IF (ASSOCIATED(Mesh%element_wedge6))    NULLIFY(Mesh%element_wedge6)
-     !IF (ASSOCIATED(Mesh%element_wedge15))   NULLIFY(Mesh%element_wedge15)
-     !IF (ASSOCIATED(Mesh%Position))          NULLIFY(Mesh%Position)
-     !IF (ASSOCIATED(Mesh%Force))             NULLIFY(Mesh%Force)
-     !IF (ASSOCIATED(Mesh%Moment))            NULLIFY(Mesh%Moment)
-     !IF (ASSOCIATED(Mesh%Orientation))       NULLIFY(Mesh%Orientation)
-     !IF (ASSOCIATED(Mesh%TranslationDisp))   NULLIFY(Mesh%TranslationDisp)
-     !IF (ASSOCIATED(Mesh%RotationVel))       NULLIFY(Mesh%RotationVel)
-     !IF (ASSOCIATED(Mesh%TranslationVel))    NULLIFY(Mesh%TranslationVel)
-     !IF (ASSOCIATED(Mesh%RotationAcc))       NULLIFY(Mesh%RotationAcc)
-     !IF (ASSOCIATED(Mesh%TranslationAcc))    NULLIFY(Mesh%TranslationAcc)
-     !IF (ASSOCIATED(Mesh%Scalars))           NULLIFY(Mesh%Scalars)
-!#endif
 
 !bjj: if we keep the sibling, deleting this table is going to be a problem
 
@@ -769,12 +780,6 @@ CONTAINS
 
    END SUBROUTINE MeshDestroy
 
-!.............
-!bjj: these are unused, I assume they were replaced with parameters MASKID_FORCE and MASKID_MOMENT
-!#define HDR_FIELDMASK_FORCE   1
-!#define HDR_FIELDMASK_MOMENT  2
-!.............
-
 ! Format of the Int buffer
 !   word
 !     1        Total size of Int buffer in bytes
@@ -787,6 +792,15 @@ CONTAINS
 !     7+$7     Table Entries                       $5 * SIZE(ElemRecType)
 !
    SUBROUTINE MeshPack ( Mesh, ReBuf, DbBuf, IntBuf , ErrStat, ErrMess, SizeOnly )
+      ! Given a mesh and allocatable buffers of type INTEGER(IntKi), REAL(ReKi), and REAL(DbKi), 
+      ! return the mesh information compacted into consecutive elements of the corresponding buffers. 
+      ! This would be done to allow subsequent writing of the buffers to a file for restarting later. 
+      ! The sense of the name is “pack the data from the mesh into buffers”. IMPORTANT: MeshPack 
+      ! allocates the three buffers. It is incumbent upon the calling program to deallocate the 
+      ! buffers when they are no longer needed. For sibling meshes, MeshPack should be called 
+      ! separately for each sibling, because the fields allocated with the siblings are separate 
+      ! and unique to each sibling.
+   
      TYPE(MeshType),              INTENT(INOUT) :: Mesh      ! Mesh being packed
      REAL(ReKi),     ALLOCATABLE, INTENT(  OUT) :: ReBuf(:)  ! Real buffer
      REAL(DbKi),     ALLOCATABLE, INTENT(  OUT) :: DbBuf(:)  ! Double buffer
@@ -795,7 +809,7 @@ CONTAINS
      CHARACTER(*),                INTENT(  OUT) :: ErrMess
      LOGICAL,OPTIONAL,            INTENT(IN   ) :: SizeOnly
    ! Local
-     INTEGER i,ic,nelem,n_int,n_re,n_db,l,ii,jj,CtrlCode,x
+     INTEGER i,ic,nelem,n_int,n_re,n_db,ii,jj,CtrlCode,x
      INTEGER Ielement, Xelement
      TYPE(ElemRecType), POINTER :: ElemRec
      LOGICAL SzOnly
@@ -980,6 +994,16 @@ CONTAINS
    END SUBROUTINE MeshPack
 
    SUBROUTINE MeshUnpack( Mesh, Re_Buf, Db_Buf, Int_Buf, ErrStat, ErrMess )
+      ! Given a blank, uncreated mesh and buffers of type INTEGER(IntKi), REAL(ReKi), and 
+      ! REAL(DbKi), unpack the mesh information from the buffers. This would be done to 
+      ! recreate a mesh after reading in the buffers on a restart of the program. The sense 
+      ! of the name is “unpack the mesh from buffers.” The resulting mesh will be returned 
+      ! in the exact state as when the data in the buffers was packed using MeshPack. 
+      
+      ! bjj: not implemented yet:  
+      ! If the mesh has an already recreated sibling mesh from a previous call to MeshUnpack, specify 
+      ! the existing sibling as an optional argument so that the sibling relationship is also recreated.
+   
      TYPE(MeshType),              INTENT(INOUT) :: Mesh
      REAL(ReKi),     ALLOCATABLE, INTENT(IN   ) :: Re_Buf(:)
      REAL(DbKi),     ALLOCATABLE, INTENT(IN   ) :: Db_Buf(:)
@@ -988,11 +1012,11 @@ CONTAINS
      CHARACTER(*),                INTENT(  OUT) :: ErrMess
 
    ! Local
-     LOGICAL Force, Moment, Orientation, TranslationDisp, TranslationVel, RotationVel, TranslationAcc, RotationAcc, AddedMass
+     LOGICAL Force, Moment, Orientation, TranslationDisp, TranslationVel, RotationVel, TranslationAcc, RotationAcc
      INTEGER nScalars
-     INTEGER i,ic,nelem,n_int,n_re,n_db,l,ii,jj,CtrlCode,x,nelemnodes
-     INTEGER Ielement, Xelement
-     TYPE(ElemRecType), POINTER :: ElemRec
+     INTEGER i,ic,ii,jj,nelemnodes
+     INTEGER Xelement
+     !TYPE(ElemRecType), POINTER :: ElemRec
 
      Force = .FALSE.
      Moment = .FALSE.
@@ -1013,9 +1037,6 @@ CONTAINS
      IF ( Int_Buf(HDR_FIELDMASK+MASKID_ROTATIONACC-1)    .EQ. 1 ) RotationAcc = .TRUE.
      IF ( Int_Buf(HDR_FIELDMASK+MASKID_SCALAR-1)      .GT. 0 ) nScalars = Int_Buf(HDR_FIELDMASK+MASKID_SCALAR-1)
 
-!write(0,*)'Int_Buf(HDR_INTBUFSIZE) ',Int_Buf(HDR_INTBUFSIZE)
-!write(0,*)'Int_Buf(HDR_IOS) ',Int_Buf(HDR_IOS)
-!write(0,*)'Int_Buf(HDR_NUMNODES) ',Int_Buf(HDR_NUMNODES)
      CALL MeshCreate( Mesh, Int_Buf(HDR_IOS), Int_Buf(HDR_NUMNODES)                    &
                      ,ErrStat=ErrStat, ErrMess=ErrMess                                 &
                      ,Force=Force, Moment=Moment, Orientation=Orientation              &
@@ -1026,12 +1047,10 @@ CONTAINS
                     )
      IF (ErrStat >= AbortErrLev) RETURN
 
-!write(0,*)'Int_Buf(HDR_NUMELEMREC) ',Int_Buf(HDR_NUMELEMREC)
      ic = HDR_FIRSTELEM
      DO i = 1, Int_Buf(HDR_NUMELEMREC)
        Xelement = Int_Buf(ic) ; ic = ic + 1
        nelemnodes = Int_Buf(ic) ; ic = ic + 1
-!write(0,*)'ic ',ic,' Xelement: ',Xelement,' nelemnodes ',nelemnodes
        SELECT CASE (nelemnodes )
          CASE (1)
            CALL MeshConstructElement( Mesh, Xelement, ErrStat, ErrMess                          &
@@ -1186,6 +1205,29 @@ CONTAINS
    SUBROUTINE MeshCopy( SrcMesh, DestMesh, CtrlCode, ErrStat , ErrMess   &
                       ,IOS, Force, Moment, Orientation, TranslationDisp, TranslationVel &
                       ,RotationVel, TranslationAcc, RotationAcc, nScalars )
+   
+   ! Given an existing mesh and a destination mesh, create a completely new copy, a sibling, or 
+   !   update the fields of a second existing mesh from the first mesh. When CtrlCode is 
+   !   MESH_NEWCOPY or MESH_SIBLING, the destination mesh must be a blank, uncreated mesh.
+   ! 
+   ! If CtrlCode is MESH_NEWCOPY, an entirely new copy of the mesh is created, including all fields, 
+   !   with the same data values as the original, but as an entirely separate copy in memory. The new 
+   !   copy is in the same state as the original—if the original has not been committed, neither is 
+   !   the copy; in this case, an all-new copy of the mesh must be committed separately.
+   !
+   ! If CtrlCode is MESH_SIBLING, the destination mesh is created with the same mesh and position/reference 
+   !   orientation information of the source mesh, and this new sibling is added to the end of the list for 
+   !   the set of siblings. Siblings may have different fields (other than Position and RefOrientation). 
+   !   Therefore, for a sibling, it is necessary, as with MeshCreate, to indicate the fields the sibling 
+   !   will have using optional arguments. Sibling meshes should not be created unless the original mesh 
+   !   has been committed first.
+   !
+   ! If CtrlCode is MESH_UPDATECOPY, all of the allocatable fields of the destination mesh are updated 
+   !   with the values of the fields in the source. (The underlying mesh is untouched.) The mesh and field 
+   !   definitions of the source and destination meshes must match and both must have been already committed. 
+   !   The destination mesh may be an entirely different copy or it may be a sibling of the source mesh.
+   
+   
      TYPE(MeshType), TARGET,      INTENT(INOUT) :: SrcMesh  ! Mesh being copied
      TYPE(MeshType), TARGET,      INTENT(INOUT) :: DestMesh ! Copy of mesh
      INTEGER(IntKi),              INTENT(IN)    :: CtrlCode ! MESH_NEWCOPY, MESH_SIBLING, or
@@ -1202,7 +1244,7 @@ CONTAINS
      LOGICAL,        OPTIONAL,    INTENT(IN)    :: RotationVel       ! If present and true, allocate RotationVel field
      LOGICAL,        OPTIONAL,    INTENT(IN)    :: TranslationAcc    ! If present and true, allocate TranslationAcc field
      LOGICAL,        OPTIONAL,    INTENT(IN)    :: RotationAcc       ! If present and true, allocate RotationAcc field
-     INTEGER(IntKi), OPTIONAL,    INTENT(IN)    :: nScalars          ! If present and > 0 , alloc n Scalars
+     INTEGER(IntKi), OPTIONAL,    INTENT(IN)    :: nScalars          ! If present and > 0 , alloc n Scalars               
     ! Local
      INTEGER(IntKi)                             :: IOS_l               ! IOS of new sibling
      LOGICAL                                    :: Force_l           & ! If true, allocate Force field
@@ -1217,6 +1259,8 @@ CONTAINS
      INTEGER i, j, k
 
 
+     
+     
       ErrStat = ErrID_None
       ErrMess = ""
 
@@ -1362,88 +1406,24 @@ CONTAINS
             ENDIF
          ENDDO
 
-
-!#if 0
-!          IF ( CtrlCode .EQ. MESH_NEWCOPY ) THEN
-!             DestMesh%npoint   = SrcMesh%npoint ; DestMesh%maxpoint = SrcMesh%maxpoint
-!             IF ( SrcMesh%npoint .GT. 0 .AND. ASSOCIATED( SrcMesh%element_point ) ) THEN
-!      !         CALL AllocPAry( DestMesh%element_point, 1, SrcMesh%maxpoint, 'MeshCreate: element_point' )
-!               DestMesh%element_point => SrcMesh%element_point
-!             ENDIF
-!             DestMesh%nline2   = SrcMesh%nline2 ; DestMesh%maxline2 = SrcMesh%maxline2
-!             IF ( SrcMesh%nline2 .GT. 0 .AND. ASSOCIATED( SrcMesh%element_line2 ) ) THEN
-!      !         CALL AllocPAry( DestMesh%element_line2, 2, SrcMesh%maxline2, 'MeshCreate: element_line2' )
-!               DestMesh%element_line2 => SrcMesh%element_line2
-!             ENDIF
-!             DestMesh%nline3   = SrcMesh%nline3 ; DestMesh%maxline3 = SrcMesh%maxline3
-!             IF ( SrcMesh%nline3 .GT. 0 .AND. ASSOCIATED( SrcMesh%element_line3 ) ) THEN
-!      !         CALL AllocPAry( DestMesh%element_line3, 3, SrcMesh%maxline3, 'MeshCreate: element_line3' )
-!               DestMesh%element_line3 => SrcMesh%element_line3
-!             ENDIF
-!             DestMesh%ntri3   = SrcMesh%ntri3 ; DestMesh%maxtri3 = SrcMesh%maxtri3
-!             IF ( SrcMesh%ntri3 .GT. 0 .AND. ASSOCIATED( SrcMesh%element_tri3 ) ) THEN
-!      !         CALL AllocPAry( DestMesh%element_tri3, 3, SrcMesh%maxtri3, 'MeshCreate: element_tri3' )
-!               DestMesh%element_tri3 => SrcMesh%element_tri3
-!             ENDIF
-!             DestMesh%ntri6   = SrcMesh%ntri6 ; DestMesh%maxtri6 = SrcMesh%maxtri6
-!             IF ( SrcMesh%ntri6 .GT. 0 .AND. ASSOCIATED( SrcMesh%element_tri6 ) ) THEN
-!      !         CALL AllocPAry( DestMesh%element_tri6, 6, SrcMesh%maxtri6, 'MeshCreate: element_tri6' )
-!               DestMesh%element_tri6 => SrcMesh%element_tri6
-!             ENDIF
-!             DestMesh%nquad4   = SrcMesh%nquad4 ; DestMesh%maxquad4 = SrcMesh%maxquad4
-!             IF ( SrcMesh%nquad4 .GT. 0 .AND. ASSOCIATED( SrcMesh%element_quad4 ) ) THEN
-!      !         CALL AllocPAry( DestMesh%element_quad4, 4, SrcMesh%maxquad4, 'MeshCreate: element_quad4' )
-!               DestMesh%element_quad4 => SrcMesh%element_quad4
-!             ENDIF
-!             DestMesh%nquad8   = SrcMesh%nquad8 ; DestMesh%maxquad8 = SrcMesh%maxquad8
-!             IF ( SrcMesh%nquad8 .GT. 0 .AND. ASSOCIATED( SrcMesh%element_quad8 ) ) THEN
-!      !         CALL AllocPAry( DestMesh%element_quad8, 8, SrcMesh%maxquad8, 'MeshCreate: element_quad8' )
-!               DestMesh%element_quad8 => SrcMesh%element_quad8
-!             ENDIF
-!             DestMesh%ntet4   = SrcMesh%ntet4 ; DestMesh%maxtet4 = SrcMesh%maxtet4
-!             IF ( SrcMesh%ntet4 .GT. 0 .AND. ASSOCIATED( SrcMesh%element_tet4 ) ) THEN
-!      !         CALL AllocPAry( DestMesh%element_tet4, 4, SrcMesh%maxtet4, 'MeshCreate: element_tet4' )
-!               DestMesh%element_tet4 => SrcMesh%element_tet4
-!             ENDIF
-!             DestMesh%ntet10   = SrcMesh%ntet10 ; DestMesh%maxtet10 = SrcMesh%maxtet10
-!             IF ( SrcMesh%ntet10 .GT. 0 .AND. ASSOCIATED( SrcMesh%element_tet10 ) ) THEN
-!      !         CALL AllocPAry( DestMesh%element_tet10, 10, SrcMesh%maxtet10, 'MeshCreate: element_tet10' )
-!               DestMesh%element_tet10 = SrcMesh%element_tet10
-!             ENDIF
-!             DestMesh%nhex8   = SrcMesh%nhex8 ; DestMesh%maxhex8 = SrcMesh%maxhex8
-!             IF ( SrcMesh%nhex8 .GT. 0 .AND. ASSOCIATED( SrcMesh%element_hex8 ) ) THEN
-!      !         CALL AllocPAry( DestMesh%element_hex8, 8, SrcMesh%maxhex8, 'MeshCreate: element_hex8' )
-!               DestMesh%element_hex8 => SrcMesh%element_hex8
-!             ENDIF
-!             DestMesh%nhex20   = SrcMesh%nhex20 ; DestMesh%maxhex20 = SrcMesh%maxhex20
-!             IF ( SrcMesh%nhex20 .GT. 0 .AND. ASSOCIATED( SrcMesh%element_hex20 ) ) THEN
-!      !         CALL AllocPAry( DestMesh%element_hex20, 20, SrcMesh%maxhex20, 'MeshCreate: element_hex20' )
-!               DestMesh%element_hex20 => SrcMesh%element_hex20
-!             ENDIF
-!             DestMesh%nwedge6   = SrcMesh%nwedge6 ; DestMesh%maxwedge6 = SrcMesh%maxwedge6
-!             IF ( SrcMesh%nwedge6 .GT. 0 .AND. ASSOCIATED( SrcMesh%element_wedge6 ) ) THEN
-!      !         CALL AllocPAry( DestMesh%element_wedge6, 6, SrcMesh%maxwedge6, 'MeshCreate: element_wedge6' )
-!               DestMesh%element_wedge6 => SrcMesh%element_wedge6
-!             ENDIF
-!             DestMesh%nwedge15   = SrcMesh%nwedge15 ; DestMesh%maxwedge15 = SrcMesh%maxwedge15
-!             IF ( SrcMesh%nwedge15 .GT. 0 .AND. ASSOCIATED( SrcMesh%element_wedge15 ) ) THEN
-!      !         CALL AllocPAry( DestMesh%element_wedge15, 15, SrcMesh%maxwedge15, 'MeshCreate: element_wedge15' )
-!               DestMesh%element_wedge15 => SrcMesh%element_wedge15
-!             ENDIF
-!          ENDIF
-!#endif
       ELSE IF ( CtrlCode .EQ. MESH_UPDATECOPY ) THEN
+         
          IF ( SrcMesh%nNodes .NE. DestMesh%nNodes ) THEN
             ErrStat = ErrID_Fatal
             ErrMess = "MeshCopy: MESH_UPDATECOPY of meshes with different numbers of nodes."
-         ELSE
-
-            ! bjj: should we update positions?
-            !DestMesh%RemapFlag = SrcMesh%RemapFlag
-            !DestMesh%nextelem  = SrcMesh%nextelem
-
          ENDIF
+                  
+      ELSE IF ( CtrlCode .EQ. MESH_UPDATEREFERENCE ) THEN
 
+         IF ( SrcMesh%nNodes .NE. DestMesh%nNodes ) THEN
+            ErrStat = ErrID_Fatal
+            ErrMess = "MeshCopy:MESH_UPDATEREFERENCE of meshes with different numbers of nodes."
+         ENDIF         ! if we have a different number of nodes or different element connectivity, we'll have to redo this
+         
+         DestMesh%Position       = SrcMesh%Position
+         DestMesh%RefOrientation = SrcMesh%RefOrientation
+         DestMesh%RemapFlag      = SrcMesh%RemapFlag            
+                        
       ELSE
          ErrStat = ErrID_Fatal
          ErrMess  = 'MeshCopy: Invalid CtrlCode.'
@@ -1471,13 +1451,19 @@ CONTAINS
 
 ! added 20130102 as stub for AeroDyn work
    SUBROUTINE MeshPositionNode( Mesh, Inode, Pos, ErrStat, ErrMess, Orient )
+
+   ! For a given node in a mesh, assign the coordinates of the node in the global coordinate space. 
+   ! If an Orient argument is included, the node will also be assigned the specified orientation 
+   ! (orientation is assumed to be the identity matrix if omitted). Returns a non-zero value in  
+   ! ErrStat if Inode is outside the range 1..Nnodes.     
+   
      TYPE(MeshType),              INTENT(INOUT) :: Mesh         ! Mesh being spatio-located
      INTEGER(IntKi),              INTENT(IN   ) :: Inode        ! Number of node being located
      REAL(ReKi),                  INTENT(IN   ) :: Pos(3)       ! Xi,Yi,Zi, coordinates of node
      INTEGER(IntKi),              INTENT(  OUT) :: ErrStat      ! Error code
      CHARACTER(*),                INTENT(  OUT) :: ErrMess      ! Error message
      REAL(ReKi), OPTIONAL,        INTENT(IN   ) :: Orient(3,3)  ! Orientation (direction cosine matrix) of node; identity by default
-
+     
      ErrStat = ErrID_None
      ErrMess = ""
     ! Safety first
@@ -1502,7 +1488,7 @@ CONTAINS
        ErrStat = ErrID_Fatal
        ErrMess = "MeshPositionNode: Position array not associated"
      ENDIF
-     IF ( .NOT. SIZE(Mesh%Position,2) .EQ. Mesh%Nnodes ) THEN
+     IF ( .NOT. SIZE(Mesh%Position,2) .GE. Mesh%Nnodes ) THEN
        ErrStat = ErrID_Fatal
        ErrMess = "MeshPositionNode: Position array not big enough"
      ENDIF
@@ -1510,7 +1496,7 @@ CONTAINS
        ErrStat = ErrID_Fatal
        ErrMess = "MeshPositionNode: RefOrientation array not associated"
      ENDIF
-     IF ( .NOT. SIZE(Mesh%RefOrientation,3) .EQ. Mesh%Nnodes ) THEN
+     IF ( .NOT. SIZE(Mesh%RefOrientation,3) .GE. Mesh%Nnodes ) THEN
        ErrStat = ErrID_Fatal
        ErrMess = "MeshPositionNode: RefOrientation array not big enough"
      ENDIF
@@ -1535,6 +1521,13 @@ CONTAINS
    END SUBROUTINE MeshPositionNode
 
    SUBROUTINE MeshCommit( Mesh, ErrStat, ErrMess )
+     
+    ! Given a mesh that has been created, spatio-located, and constructed, 
+    ! commit the definition of the mesh, making it ready for initialization 
+    ! and use. Explicitly committing a mesh provides the opportunity to precompute 
+    ! traversal information, neighbor lists and other information about the mesh. 
+    ! Returns non-zero in value of ErrStat on error.     
+    
      TYPE(MeshType),              INTENT(INOUT) :: Mesh ! Mesh being committed
      INTEGER(IntKi),              INTENT(OUT)   :: ErrStat ! Error code
      CHARACTER(*),                INTENT(OUT)   :: ErrMess ! Error message
@@ -1576,6 +1569,8 @@ CONTAINS
             END DO
          END DO
       END DO
+      
+      ! maybe we should check that the RefOrientation is a DCM? (or at least non-zero?)
 
       IF ( .NOT. ALL(NodeInElement) ) THEN
          ErrStat = ErrID_Fatal
@@ -1583,6 +1578,28 @@ CONTAINS
          RETURN  ! Early return
       END IF
 
+      IF ( .NOT. ANY(Mesh%FieldMask) ) THEN
+         ErrStat = ErrID_Fatal
+         ErrMess = "MeshCommit: Mesh does not contain any fields."
+         RETURN
+      END IF
+         
+      
+     ! make sure the arrays are allocated properly...
+      IF ( SIZE(Mesh%Position,2) < Mesh%Nnodes) THEN
+         ErrStat = ErrID_Fatal
+         ErrMess = "MeshCommit: Position array smaller than number of nodes."
+         RETURN  ! Early return
+      ELSEIF ( SIZE(Mesh%Position,2) > Mesh%Nnodes ) THEN
+         
+         ! bjj: need to get rid of the extra storage so that this doesn't cause errors in MeshCopy....
+         
+         
+      END IF
+        
+      
+      
+      
      ! Construct list of elements
 
 
@@ -1599,7 +1616,7 @@ CONTAINS
 
      IF (ErrStat /= 0) THEN
         ErrStat = ErrID_Fatal
-        ErrMess = " MeshCommit: Error allocating element list."
+        ErrMess = "MeshCommit: Error allocating element list."
         RETURN
      END IF
 
@@ -1621,13 +1638,24 @@ CONTAINS
 
      DO j = 1,Mesh%ElemTable(ELEMENT_LINE2)%nelem
 
-        n1_n2_vector = Mesh%Position(:,Mesh%ElemTable(ELEMENT_LINE2)%Elements(j)%ElemNodes(2)) &
-                     - Mesh%Position(:,Mesh%ElemTable(ELEMENT_LINE2)%Elements(j)%ElemNodes(1))
+        n2 = Mesh%ElemTable(ELEMENT_LINE2)%Elements(j)%ElemNodes(2)
+        n1 = Mesh%ElemTable(ELEMENT_LINE2)%Elements(j)%ElemNodes(1)
+        n1_n2_vector = Mesh%Position(:,n2) &
+                     - Mesh%Position(:,n1)
 
         Mesh%ElemTable(ELEMENT_LINE2)%Elements(J)%det_jac  = 0.5_ReKi * SQRT( DOT_PRODUCT(n1_n2_vector,n1_n2_vector) )   ! = L / 2
+        
+        IF ( EqualRealNos( 2.0_ReKi*Mesh%ElemTable(ELEMENT_LINE2)%Elements(J)%det_jac, 0.0_Reki ) ) THEN
+           ErrStat = ErrID_Fatal
+           ErrMess = trim(ErrMess)//"MeshCommit: Line2 element "//TRIM(Num2Lstr(j))//" has 0 length."//NewLine// &
+                     "   n2 = n("//TRIM(Num2Lstr(n2))//") = ("//TRIM(Num2Lstr(Mesh%Position(1,n2)))//','//TRIM(Num2Lstr(mesh%position(2,n2)))//','//TRIM(Num2Lstr(mesh%position(3,n2))) //')'//NewLine// &
+                     "   n1 = n("//TRIM(Num2Lstr(n1))//") = ("//TRIM(Num2Lstr(Mesh%Position(1,n1)))//','//TRIM(Num2Lstr(mesh%position(2,n1)))//','//TRIM(Num2Lstr(mesh%position(3,n1))) //')'//NewLine
+           RETURN
+        END IF
 
      END DO
 
+   
      ! we're finished:
 
       Mesh%Committed = .TRUE.
@@ -1636,6 +1664,11 @@ CONTAINS
 
 ! added 20130102 as stub for AeroDyn work
    SUBROUTINE MeshConstructElement_1PT( Mesh, Xelement, ErrStat, ErrMess, P1 )
+     
+   ! Given a mesh and an element name, construct an point element whose vertex is the 
+   ! node index listed as the remaining argument of the call to MeshConstructElement.
+   ! Returns a non-zero value on error.     
+     
      TYPE(MeshType),              INTENT(INOUT) :: Mesh      ! Mesh being constructed
      INTEGER(IntKi),              INTENT(IN)    :: Xelement  ! See Element Names
      INTEGER(IntKi),              INTENT(OUT)   :: ErrStat   ! Error code
@@ -1669,7 +1702,13 @@ CONTAINS
 
        IF ( Mesh%ElemTable(ELEMENT_POINT)%nelem .GE. Mesh%ElemTable(ELEMENT_POINT)%maxelem ) THEN
 !write(0,*)'>>>>>>>>>> bumping maxpoint',Mesh%ElemTable(ELEMENT_POINT)%maxelem
-         ALLOCATE(tmp(Mesh%ElemTable(ELEMENT_POINT)%maxelem+BUMPUP))
+         ALLOCATE(tmp(Mesh%ElemTable(ELEMENT_POINT)%maxelem+BUMPUP),sTAT=ErrStat)
+         IF (ErrStat /= 0) THEN
+            ErrStat = ErrID_Fatal
+            ErrMess = "MeshConstructElement_1PT: Couldn't allocate space for element table."
+            RETURN
+         END IF
+         
          IF ( Mesh%ElemTable(ELEMENT_POINT)%nelem .GT. 1 ) &
            tmp(1:Mesh%ElemTable(ELEMENT_POINT)%maxelem) = Mesh%ElemTable(ELEMENT_POINT)%Elements(1:Mesh%ElemTable(ELEMENT_POINT)%maxelem)
          IF ( ASSOCIATED(Mesh%ElemTable(ELEMENT_POINT)%Elements) ) DEALLOCATE(Mesh%ElemTable(ELEMENT_POINT)%Elements)
@@ -1678,7 +1717,12 @@ CONTAINS
 !write(0,*)'>>>>>>>>>> bumped maxpoint',Mesh%ElemTable(ELEMENT_POINT)%maxelem
        ENDIF
 
-       ALLOCATE(Mesh%ElemTable(ELEMENT_POINT)%Elements(Mesh%ElemTable(ELEMENT_POINT)%nelem)%ElemNodes(1))
+       ALLOCATE(Mesh%ElemTable(ELEMENT_POINT)%Elements(Mesh%ElemTable(ELEMENT_POINT)%nelem)%ElemNodes(1),sTAT=ErrStat)
+         IF (ErrStat /= 0) THEN
+            ErrStat = ErrID_Fatal
+            ErrMess = "MeshConstructElement_1PT: Couldn't allocate space for element nodes."
+            RETURN
+         END IF
        Mesh%ElemTable(ELEMENT_POINT)%Elements(Mesh%ElemTable(ELEMENT_POINT)%nelem)%ElemNodes(1) = P1
        Mesh%ElemTable(ELEMENT_POINT)%Elements(Mesh%ElemTable(ELEMENT_POINT)%nelem)%Xelement = ELEMENT_POINT
      ELSE
@@ -1691,6 +1735,12 @@ CONTAINS
    END SUBROUTINE MeshConstructElement_1PT
 
    SUBROUTINE MeshConstructElement_2PT( Mesh, Xelement, ErrStat, ErrMess, P1, P2 )
+     
+      ! Given a mesh and an element name, construct 2-point line (line2) element whose 
+      ! vertices are the node indices listed as the remaining arguments of the call to 
+      ! MeshConstructElement. The adjacency of elements is implied when elements are 
+      ! created that share some of the same nodes. Returns a non-zero value on error.     
+      
      TYPE(MeshType),              INTENT(INOUT) :: Mesh      ! Mesh being constructed
      INTEGER(IntKi),              INTENT(IN)    :: Xelement  ! See Element Names
      INTEGER(IntKi),              INTENT(OUT)   :: ErrStat   ! Error code
@@ -1705,7 +1755,7 @@ CONTAINS
     ! Safety first
      IF ( .NOT. Mesh%Initialized ) THEN
        ErrStat = ErrID_Fatal
-       ErrMess = "MeshConstructElement_1PT: attempt to use uncreated mesh."
+       ErrMess = "MeshConstructElement_2PT: attempt to use uncreated mesh."
      ELSEIF ( P1 .LT. 1 .OR. P1 .GT. Mesh%Nnodes .OR. &
           P2 .LT. 1 .OR. P2 .GT. Mesh%Nnodes ) THEN
        ErrStat = ErrID_Fatal
@@ -1728,7 +1778,13 @@ CONTAINS
 
        IF ( Mesh%ElemTable(ELEMENT_LINE2)%nelem .GE. Mesh%ElemTable(ELEMENT_LINE2)%maxelem ) THEN
 !write(0,*)'>>>>>>>>>> bumping maxline2',Mesh%ElemTable(ELEMENT_LINE2)%maxelem
-         ALLOCATE(tmp(Mesh%ElemTable(ELEMENT_LINE2)%maxelem+BUMPUP))
+         ALLOCATE(tmp(Mesh%ElemTable(ELEMENT_LINE2)%maxelem+BUMPUP),Stat=ErrStat)
+         IF (ErrStat /= 0) THEN
+            ErrStat = ErrID_Fatal
+            ErrMess = "MeshConstructElement_2PT: Couldn't allocate space for element table"
+            RETURN
+         END IF
+            
          IF ( Mesh%ElemTable(ELEMENT_LINE2)%nelem .GT. 1 ) &
            tmp(1:Mesh%ElemTable(ELEMENT_LINE2)%maxelem) = Mesh%ElemTable(ELEMENT_LINE2)%Elements(1:Mesh%ElemTable(ELEMENT_LINE2)%maxelem)
          IF ( ASSOCIATED(Mesh%ElemTable(ELEMENT_LINE2)%Elements) ) DEALLOCATE(Mesh%ElemTable(ELEMENT_LINE2)%Elements)
@@ -1736,7 +1792,12 @@ CONTAINS
          Mesh%ElemTable(ELEMENT_LINE2)%maxelem = Mesh%ElemTable(ELEMENT_LINE2)%maxelem + BUMPUP
 !write(0,*)'>>>>>>>>>> bumped maxline2',Mesh%ElemTable(ELEMENT_LINE2)%maxelem
        ENDIF
-       ALLOCATE(Mesh%ElemTable(ELEMENT_LINE2)%Elements(Mesh%ElemTable(ELEMENT_LINE2)%nelem)%ElemNodes(2))
+       ALLOCATE(Mesh%ElemTable(ELEMENT_LINE2)%Elements(Mesh%ElemTable(ELEMENT_LINE2)%nelem)%ElemNodes(2),Stat=ErrStat)
+         IF (ErrStat /= 0) THEN
+            ErrStat = ErrID_Fatal
+            ErrMess = "MeshConstructElement_2PT: Couldn't allocate space for element nodes."
+            RETURN
+         END IF
        Mesh%ElemTable(ELEMENT_LINE2)%Elements(Mesh%ElemTable(ELEMENT_LINE2)%nelem)%ElemNodes(1) = P1
        Mesh%ElemTable(ELEMENT_LINE2)%Elements(Mesh%ElemTable(ELEMENT_LINE2)%nelem)%ElemNodes(2) = P2
        Mesh%ElemTable(ELEMENT_LINE2)%Elements(Mesh%ElemTable(ELEMENT_LINE2)%nelem)%Xelement = ELEMENT_LINE2
@@ -1858,7 +1919,75 @@ CONTAINS
      ErrMess = 'MeshConstructElement_20PT not supported'
    END SUBROUTINE MeshConstructElement_20PT
 
+!................................................................                                                                                                                                                      
+   SUBROUTINE MeshSplitElement_2PT( Mesh, Xelement, ErrStat, ErrMess, E1, P1  )
+      ! routine splits a line2 element into two separate elements, using p1 as
+      ! the new node connecting the two new elements formed from E1
+      
+      TYPE(MeshType),              INTENT(INOUT) :: Mesh      ! Mesh being constructed
+      INTEGER(IntKi),              INTENT(IN)    :: Xelement  ! See Element Names
+      INTEGER(IntKi),              INTENT(OUT)   :: ErrStat   ! Error code
+      CHARACTER(*),                INTENT(OUT)   :: ErrMess   ! Error message
+      INTEGER,                     INTENT(IN   ) :: E1        ! number of element in Element Table
+      INTEGER,                     INTENT(IN   ) :: P1        ! node number
+
+      INTEGER                                    :: p2        ! local copy of P2, in case we end up deallocating the array pointed to in the call to construct a new element
+      
+      IF ( mesh_debug ) print*,'Called MeshSplitElement_2PT'
+      ErrStat = ErrID_None
+      ErrMess = ""
+      
+      ! Safety first
+      IF ( Xelement .NE. ELEMENT_LINE2 ) THEN
+         ErrMess = 'MeshSplitElement_2PT called for invalid element type.'
+         ErrStat = ErrID_Fatal        
+      ELSEIF ( .NOT. Mesh%Initialized ) THEN
+         ErrStat = ErrID_Fatal
+         ErrMess = "MeshSplitElement_2PT: attempt to use uncreated mesh."
+      ELSEIF ( P1 .LT. 1 .OR. P1 .GT. Mesh%Nnodes ) THEN
+         ErrStat = ErrID_Fatal
+         ErrMess ="MeshSplitElement_2PT: invalid P1 ("//TRIM(Num2LStr(P1))//") for mesh with "//TRIM(Num2LStr(Mesh%Nnodes))//" nodes."
+      ELSEIF ( E1 .LT. 1 .OR. E1 .GT. Mesh%ElemTable(ELEMENT_LINE2)%nelem ) THEN
+         ErrStat = ErrID_Fatal
+         ErrMess ="MeshSplitElement_2PT: invalid E1 ("//TRIM(Num2LStr(E1))//") for mesh with "//TRIM(Num2LStr(Mesh%ElemTable(ELEMENT_LINE2)%nelem))//" Line2 elements."
+      ELSEIF (Mesh%Committed ) THEN
+         ErrStat = ErrID_Fatal
+         ErrMess = " MeshSplitElement_2PT: attempt to add element to committed mesh."
+      ELSEIF ( Mesh%ElemTable(ELEMENT_LINE2)%Elements(E1)%ElemNodes(1) == P1 .OR. &
+              Mesh%ElemTable(ELEMENT_LINE2)%Elements(E1)%ElemNodes(2) == P1 ) THEN
+         ErrStat = ErrID_Fatal
+         ErrMess ="MeshSplitElement_2PT: node P1 ("//TRIM(Num2LStr(P1))//") is already a node of element E1 ("//TRIM(Num2LStr(E1))//")."                
+      ENDIF
+     
+      IF ( ErrStat .NE. ErrID_None ) THEN
+         !CALL WrScr( TRIM(ErrMess) )
+         RETURN  !  early return on fatal error
+      ENDIF
+               
+     
+    ! Business
+      ! E1 currently has nodes (n1,n2):
+      ! Create a new element with nodes (p1,n2):
+      p2 = Mesh%ElemTable(ELEMENT_LINE2)%Elements(E1)%ElemNodes(2)
+      CALL MeshConstructElement( Mesh, Xelement, ErrStat, ErrMess, p1=P1, p2=p2)
+    
+         ! Make element E1 now have nodes (n1,p1):
+      Mesh%ElemTable(ELEMENT_LINE2)%Elements(E1)%ElemNodes(2) = P1
+    
+      RETURN
+       
+   END SUBROUTINE MeshSplitElement_2PT
+!................................................................                                                                           
+                                                                           
    SUBROUTINE MeshNextElement ( Mesh, CtrlCode, ErrStat, ErrMess, Ielement, Xelement, ElemRec )
+   
+      ! Given a control code and a mesh that has been committed, retrieve the next element in the mesh. 
+      !   Used to traverse mesh element by element. On entry, the CtrlCode argument contains a control code: 
+      !   zero indicates start from the beginning, an integer between 1 and Mesh%Nelemlist returns that element,
+      !   and MESH_NEXT means return the next element in traversal. On exit, CtrlCode contains the status of the 
+      !   traversal in (zero or MESH_NOMOREELEMS). The routine optionally outputs the index of the element in the
+      !   mesh’s element list, the name of the element (see “Element Names”), and a pointer to the element.    
+   
      TYPE(MeshType),              INTENT(INOUT) :: Mesh      ! Mesh being constructed
      INTEGER(IntKi),              INTENT(INOUT) :: CtrlCode  ! CtrlCode
      INTEGER(IntKi),              INTENT(OUT)   :: ErrStat   ! Error code
@@ -1901,39 +2030,29 @@ CONTAINS
    END SUBROUTINE MeshNextElement
 
 
-
-
    !...............................................................................................................................
     SUBROUTINE MeshExtrapInterp1(u1, u2, tin, u_out, tin_out, ErrStat, ErrMsg )
-   !
+   
    ! This subroutine calculates a extrapolated (or interpolated) input u_out at time t_out, from previous/future time
-   ! values of u (which has values associated with times in t).  Order of the interpolation is 1
-   !
-   !  expressions below based on either
-   !
-   !  f(t) = a
-   !  f(t) = a + b * t, or
-   !  f(t) = a + b * t + c * t**2
-   !
-   !  where a, b and c are determined as the solution to
-   !  f(t1) = u1, f(t2) = u2, f(t3) = u3  (as appropriate)
-   !
-   !...............................................................................................................................
-
-    TYPE(MeshType),      INTENT(IN)     :: u1            ! Inputs at t1 > t2
-    TYPE(MeshType),      INTENT(IN)     :: u2            ! Inputs at t2
-    REAL(DbKi),          INTENT(IN   )  :: tin(:)        ! Times associated with the inputs
-    TYPE(MeshType),      INTENT(INOUT)  :: u_out         ! Inputs at tin_out
-    REAL(DbKi),          INTENT(IN   )  :: tin_out       ! time to be extrap/interp'd to
-    INTEGER(IntKi),      INTENT(  OUT)  :: ErrStat       ! Error status of the operation
-    CHARACTER(*),        INTENT(  OUT)  :: ErrMsg        ! Error message if ErrStat /= ErrID_None
-
-      ! local variables
-    REAL(DbKi)                          :: t(SIZE(tin))  ! Times associated with the inputs
-    REAL(DbKi)                          :: t_out         ! Time to which to be extrap/interpd
-    INTEGER(IntKi), parameter           :: order = 1     ! order of polynomial fit (max 2)
-
-    REAL(DbKi)                          :: scaleFactor   ! temporary for extrapolation/interpolation
+   ! values of u (which has values associated with times in t).  Order of the interpolation is 1.
+   
+    TYPE(MeshType),      INTENT(IN)     :: u1                        ! Inputs at t1 > t2
+    TYPE(MeshType),      INTENT(IN)     :: u2                        ! Inputs at t2
+    REAL(DbKi),          INTENT(IN   )  :: tin(:)                    ! Times associated with the inputs
+    TYPE(MeshType),      INTENT(INOUT)  :: u_out                     ! Inputs at tin_out
+    REAL(DbKi),          INTENT(IN   )  :: tin_out                   ! time to be extrap/interp'd to
+    INTEGER(IntKi),      INTENT(  OUT)  :: ErrStat                   ! Error status of the operation
+    CHARACTER(*),        INTENT(  OUT)  :: ErrMsg                    ! Error message if ErrStat /= ErrID_None
+                                                                     
+      ! local variables                                              
+    REAL(DbKi)                          :: t(SIZE(tin))              ! Times associated with the inputs
+    REAL(DbKi)                          :: t_out                     ! Time to which to be extrap/interpd
+    INTEGER(IntKi), parameter           :: order = 1                 ! order of polynomial fit (max 2)
+    INTEGER(IntKi)                      :: node                      ! node counter
+                                                                     
+    REAL(DbKi)                          :: scaleFactor               ! temporary for extrapolation/interpolation
+    REAL(ReKi)                          :: SmllRotAngs(3,order+1)    ! for extrapolation of orientations: small rotational angles of the DCMs for each mesh
+    REAL(ReKi)                          :: SmllRotAngs_out(3)        ! for extrapolation of orientations: extrapolated small rotational angles of the DCMs
 
        ! Initialize ErrStat
        ErrStat = ErrID_None
@@ -1997,48 +2116,57 @@ CONTAINS
          !ErrStat=ErrID_Info
          !ErrMsg='Orientations not implemented in MeshExtrapInterp1; using nearest neighbor approach instead.'
 
-         IF (scaleFactor < 0.5) THEN
-            u_out%Orientation = u1%Orientation
-         ELSE
-            u_out%Orientation = u2%Orientation
-         END IF
+         !IF ( t_out < t(2)*0.5) THEN !it's closer to t(1)
+         !   u_out%Orientation = u1%Orientation
+         !ELSEIF ( t_out <= t(2) ) THEN
+         !   u_out%Orientation = u2%Orientation
+         !ELSE                        
+            DO node=1,u_out%Nnodes
+
+               SmllRotAngs(:,1) = GetSmllRotAngs ( u1%Orientation(:,:,node), ErrStat, ErrMsg )               
+               SmllRotAngs(:,2) = GetSmllRotAngs ( u2%Orientation(:,:,node), ErrStat, ErrMsg )               
+                                             
+               SmllRotAngs_out  = SmllRotAngs(:,1) + (SmllRotAngs(:,2) - SmllRotAngs(:,1)) * scaleFactor                
+! u_out%Orientation(:,:,node) =                
+               CALL SmllRotTrans( 'Mesh Orientation Extrapolation', SmllRotAngs_out(1), SmllRotAngs_out(2), SmllRotAngs_out(3), u_out%Orientation(:,:,node), ' ', ErrStat, ErrMsg )
+               
+            END DO
+            ErrStat = ErrID_None
+            ErrMsg  = ""
+
+         !END IF
       END IF
 
    END SUBROUTINE MeshExtrapInterp1
 
    !...............................................................................................................................
     SUBROUTINE MeshExtrapInterp2(u1, u2, u3, tin, u_out, tin_out, ErrStat, ErrMsg )
-   !
+   
    ! This subroutine calculates a extrapolated (or interpolated) input u_out at time t_out, from previous/future time
    ! values of u (which has values associated with times in t).  Order of the interpolation is 2.
-   !
-   !  expressions below based on either
-   !
-   !  f(t) = a
-   !  f(t) = a + b * t, or
-   !  f(t) = a + b * t + c * t**2
-   !
-   !  where a, b and c are determined as the solution to
-   !  f(t1) = u1, f(t2) = u2, f(t3) = u3  (as appropriate)
-   !
-   !...............................................................................................................................
+      
 
-    TYPE(MeshType),      INTENT(IN)     :: u1            ! Inputs at t1 > t2 > t3
-    TYPE(MeshType),      INTENT(IN)     :: u2            ! Inputs at t2 > t3
-    TYPE(MeshType),      INTENT(IN)     :: u3            ! Inputs at t3
-    REAL(DbKi),          INTENT(IN   )  :: tin(:)        ! Times associated with the inputs
-    TYPE(MeshType),      INTENT(INOUT)  :: u_out         ! Inputs at tin_out
-    REAL(DbKi),          INTENT(IN   )  :: tin_out       ! time to be extrap/interp'd to
-    INTEGER(IntKi),      INTENT(  OUT)  :: ErrStat       ! Error status of the operation
-    CHARACTER(*),        INTENT(  OUT)  :: ErrMsg        ! Error message if ErrStat /= ErrID_None
-
-      ! local variables
-    REAL(DbKi)                          :: t(SIZE(tin))  ! Times associated with the inputs
-    REAL(DbKi)                          :: t_out         ! Time to which to be extrap/interpd
-    INTEGER(IntKi), parameter           :: order = 2     ! order of polynomial fit (max 2)
-
-    REAL(DbKi)                          :: scaleFactor   ! temporary for extrapolation/interpolation
-
+    TYPE(MeshType),      INTENT(IN)     :: u1                        ! Inputs at t1 > t2 > t3
+    TYPE(MeshType),      INTENT(IN)     :: u2                        ! Inputs at t2 > t3
+    TYPE(MeshType),      INTENT(IN)     :: u3                        ! Inputs at t3
+    REAL(DbKi),          INTENT(IN   )  :: tin(:)                    ! Times associated with the inputs
+    TYPE(MeshType),      INTENT(INOUT)  :: u_out                     ! Inputs at tin_out
+    REAL(DbKi),          INTENT(IN   )  :: tin_out                   ! time to be extrap/interp'd to
+    INTEGER(IntKi),      INTENT(  OUT)  :: ErrStat                   ! Error status of the operation
+    CHARACTER(*),        INTENT(  OUT)  :: ErrMsg                    ! Error message if ErrStat /= ErrID_None
+                                                                     
+      ! local variables                                              
+    REAL(DbKi)                          :: t(SIZE(tin))              ! Times associated with the inputs
+    REAL(DbKi)                          :: t_out                     ! Time to which to be extrap/interpd
+    INTEGER(IntKi), parameter           :: order = 2                 ! order of polynomial fit (max 2)
+    INTEGER(IntKi)                      :: node                      ! node counter
+                                                                     
+    REAL(DbKi)                          :: scaleFactor               ! temporary for extrapolation/interpolation
+    REAL(ReKi)                          :: SmllRotAngs(3,order+1)    ! for extrapolation of orientations: small rotational angles of the DCMs for each mesh
+    REAL(ReKi)                          :: SmllRotAngs_out(3)        ! for extrapolation of orientations: extrapolated small rotational angles of the DCMs
+    
+    
+    
          ! Initialize ErrStat
        ErrStat = ErrID_None
        ErrMsg  = ""
@@ -2115,10 +2243,10 @@ CONTAINS
       END IF
 
       IF ( ALLOCATED(u1%RotationAcc) ) THEN
-         u_out%RotationVel =   u1%RotationVel &
-                             + ( t(3)**2 * ( u1%RotationVel - u2%RotationVel) &
-                               + t(2)**2 * (-u1%RotationVel + u3%RotationVel) ) * scaleFactor &
-                            + ( (t(2)-t(3))*u1%RotationVel  + t(3)*u2%RotationVel - t(2)*u3%RotationVel )*scaleFactor*t_out
+         u_out%RotationAcc =   u1%RotationAcc &
+                             + ( t(3)**2 * ( u1%RotationAcc - u2%RotationAcc) &
+                               + t(2)**2 * (-u1%RotationAcc + u3%RotationAcc) ) * scaleFactor &
+                            + ( (t(2)-t(3))*u1%RotationAcc  + t(3)*u2%RotationAcc - t(2)*u3%RotationAcc )*scaleFactor*t_out
       END IF
 
       IF ( ALLOCATED(u1%TranslationAcc) ) THEN
@@ -2138,20 +2266,38 @@ CONTAINS
          !ErrStat=ErrID_Info
          !ErrMsg=' Orientations are not implemented in MeshExtrapInterp2; using nearest neighbor approach instead.'
 
-         IF ( t_out < 0.5_DbKi*(t(2)+t(1)) ) THEN
-            u_out%Orientation = u1%Orientation
-         ELSEIF ( t_out < 0.5_DbKi*(t(3)+t(2)) ) THEN
-            u_out%Orientation = u2%Orientation
-         ELSE
-            u_out%Orientation = u3%Orientation
-         END IF
+         !IF ( t_out < 0.5_DbKi*(t(2)+t(1)) ) THEN
+         !   u_out%Orientation = u1%Orientation
+         !ELSEIF ( t_out < 0.5_DbKi*(t(3)+t(2)) ) THEN
+         !   u_out%Orientation = u2%Orientation
+         !ELSEIF ( t_out <= t(3) ) THEN
+         !   u_out%Orientation = u3%Orientation
+         !ELSE
+            
+            DO node=1,u_out%Nnodes
+               SmllRotAngs(:,1) = GetSmllRotAngs ( u1%Orientation(:,:,node), ErrStat, ErrMsg )               
+               SmllRotAngs(:,2) = GetSmllRotAngs ( u2%Orientation(:,:,node), ErrStat, ErrMsg )               
+               SmllRotAngs(:,3) = GetSmllRotAngs ( u3%Orientation(:,:,node), ErrStat, ErrMsg )            
+                                              
+               SmllRotAngs_out =   SmllRotAngs(:,1) &
+                               + ( t(3)**2 * (SmllRotAngs(:,1) - SmllRotAngs(:,2)) + t(2)**2*(-SmllRotAngs(:,1) + SmllRotAngs(:,3)) )*scaleFactor &
+                               + ( (t(2)-t(3))*SmllRotAngs(:,1) + t(3)*SmllRotAngs(:,2) - t(2)*SmllRotAngs(:,3) )*scaleFactor * t_out
+               
+! u_out%Orientation(:,:,node) =                
+               CALL SmllRotTrans( 'Mesh Orientation Extrapolation', SmllRotAngs_out(1), SmllRotAngs_out(2), SmllRotAngs_out(3), u_out%Orientation(:,:,node), ' ', ErrStat, ErrMsg )
+               
+            END DO
+            ErrStat = ErrID_None
+            ErrMsg  = ""
+                                    
+         !END IF
       END IF
 
    END SUBROUTINE MeshExtrapInterp2
 
    !...............................................................................................................................
     SUBROUTINE MeshExtrapInterp(u, tin, u_out, tin_out, ErrStat, ErrMsg )
-   !
+   
    ! This subroutine calculates a extrapolated (or interpolated) input u_out at time t_out, from previous/future time
    ! values of u (which has values associated with times in t).  Order of the interpolation is given by the size of u
    !
@@ -2163,8 +2309,7 @@ CONTAINS
    !
    !  where a, b and c are determined as the solution to
    !  f(t1) = u1, f(t2) = u2, f(t3) = u3  (as appropriate)
-   !
-   !...............................................................................................................................
+
 
     TYPE(MeshType),      INTENT(INOUT)  :: u(:)          ! Inputs at t1 > t2 > t3
     REAL(DbKi),          INTENT(IN   )  :: tin(:)        ! Times associated with the inputs
