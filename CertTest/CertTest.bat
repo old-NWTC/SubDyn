@@ -65,7 +65,7 @@ REM  SubDyn test sequence definition:
 @SET  TEST02=Test #02: A 2D house frame aligned along the X-axis.
 @SET  TEST03=Test #03: A one-bay OC4 Jacket under static displacement.
 @SET  TEST04=Test #04: OC4 Jacket under static displacement.
-
+@SET  TEST05=Test #05: A 2D house frame rotated 30 deg from the X-axis.
 
 @SET  DASHES=---------------------------------------------------------------------------------------------
 @SET  POUNDS=#############################################################################################
@@ -127,6 +127,10 @@ rem *******************************************************
 @CALL :GenTestHeader %Test04%
 @CALL :RunSubDyn 04 out
 
+rem *******************************************************
+:Test5
+@CALL :GenTestHeader %Test05%
+@CALL :RunSubDyn 05 out
 
 rem ******************************************************
 rem  Let's look at the comparisons.
