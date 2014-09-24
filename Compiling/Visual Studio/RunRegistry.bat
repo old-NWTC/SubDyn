@@ -28,7 +28,7 @@ SET NWTC_Lib_Loc=%Source_Loc%\dependencies\NWTC_Library
 
 
 
-IF /I "%2"=="bjonkman" CALL ..\Set_FAST_paths.bat
+IF /I "%2"=="dev" CALL ..\Set_FAST_paths.bat
 
 
 
