@@ -45,7 +45,7 @@ goto CertTest
 
 :devBuild
 @SET EXE_VER=Using SubDyn compiled with Visual Studio Project, release mode (IVF/VS)
-@SET SubDyn=..\bin\SubDyn_dev_win32.exe
+@SET SubDyn=..\bin\SubDyn_dev_Release_win32.exe
 goto CertTest
 
 :devDebugBuild
