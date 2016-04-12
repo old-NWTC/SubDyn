@@ -1,6 +1,6 @@
 !**********************************************************************************************************************************
 ! LICENSING
-! Copyright (C) 2013-2015  National Renewable Energy Laboratory
+! Copyright (C) 2013-2016  National Renewable Energy Laboratory
 !
 !    This file is part of the NWTC Subroutine Library.
 !
@@ -17,8 +17,8 @@
 ! limitations under the License.
 !
 !**********************************************************************************************************************************
-! File last committed: $Date: 2016-01-06 09:39:42 -0700 (Wed, 06 Jan 2016) $
-! (File) Revision #: $Rev: 355 $
+! File last committed: $Date: 2016-04-05 19:58:22 -0600 (Tue, 05 Apr 2016) $
+! (File) Revision #: $Rev: 367 $
 ! URL: $HeadURL: https://windsvn.nrel.gov/NWTC_Library/trunk/source/NWTC_Num.f90 $
 !**********************************************************************************************************************************
 
@@ -172,6 +172,7 @@ MODULE NWTC_Num
       MODULE PROCEDURE InterpStpComp8
       MODULE PROCEDURE InterpStpComp16
       MODULE PROCEDURE InterpStpReal4
+      MODULE PROCEDURE InterpStpReal4_8
       MODULE PROCEDURE InterpStpReal8
       MODULE PROCEDURE InterpStpReal16
    END INTERFACE
@@ -179,6 +180,7 @@ MODULE NWTC_Num
       !> \copydoc nwtc_num::interpwrappedstpreal4
    INTERFACE InterpWrappedStpReal
       MODULE PROCEDURE InterpWrappedStpReal4
+      MODULE PROCEDURE InterpWrappedStpReal4_8
       MODULE PROCEDURE InterpWrappedStpReal8
       MODULE PROCEDURE InterpWrappedStpReal16
    END INTERFACE
@@ -190,6 +192,12 @@ MODULE NWTC_Num
       MODULE PROCEDURE LocateStpR16
    END INTERFACE
 
+   !> \copydoc nwtc_num::skewsymmatr4
+   INTERFACE SkewSymMat
+      MODULE PROCEDURE SkewSymMatR4
+      MODULE PROCEDURE SkewSymMatR8
+      MODULE PROCEDURE SkewSymMatR16
+   END INTERFACE
    
 
 CONTAINS
@@ -999,6 +1007,7 @@ CONTAINS
    ELSE   
       
          ! convert lambda to skew-symmetric matrix:
+      !tmp_mat = -SkewSymMat(lambda)
       tmp_mat(1,1) =  0.0_ReKi                                            
       tmp_mat(2,1) = -lambda(3)                                           
       tmp_mat(3,1) =  lambda(2)                                           
@@ -3037,6 +3046,65 @@ CONTAINS
    END FUNCTION InterpStpReal4
 !=======================================================================
 !> \copydoc nwtc_num::interpstpcomp4
+   FUNCTION InterpStpReal4_8( XVal, XAry, YAry, Ind, AryLen )
+
+      ! Function declaration.
+
+   REAL(R8Ki)                   :: InterpStpReal4_8                                !< The interpolated value of Y at XVal
+
+
+      ! Argument declarations.
+
+   INTEGER, INTENT(IN)          :: AryLen                                          ! Length of the arrays.
+   INTEGER, INTENT(INOUT)       :: Ind                                             ! Initial and final index into the arrays.
+
+   REAL(SiKi), INTENT(IN)       :: XAry    (AryLen)                                ! Array of X values to be interpolated.
+   REAL(SiKi), INTENT(IN)       :: XVal                                            ! X value to be interpolated.
+   REAL(R8Ki), INTENT(IN)       :: YAry    (AryLen)                                ! Array of Y values to be interpolated.
+
+
+
+      ! Let's check the limits first.
+
+   IF ( XVal <= XAry(1) )  THEN
+      InterpStpReal4_8 = YAry(1)
+      Ind            = 1
+      RETURN
+   ELSE IF ( XVal >= XAry(AryLen) )  THEN
+      InterpStpReal4_8 = YAry(AryLen)
+      Ind            = MAX(AryLen - 1, 1)
+      RETURN
+   END IF
+
+
+     ! Let's interpolate!
+
+   Ind = MAX( MIN( Ind, AryLen-1 ), 1 )
+
+   DO
+
+      IF ( XVal < XAry(Ind) )  THEN
+
+         Ind = Ind - 1
+
+      ELSE IF ( XVal >= XAry(Ind+1) )  THEN
+
+         Ind = Ind + 1
+
+      ELSE
+
+         InterpStpReal4_8 = ( YAry(Ind+1) - YAry(Ind) )*( XVal - XAry(Ind) )/( XAry(Ind+1) - XAry(Ind) ) + YAry(Ind)
+         RETURN
+
+      END IF
+
+   END DO
+
+
+   RETURN
+   END FUNCTION InterpStpReal4_8 
+!=======================================================================
+!> \copydoc nwtc_num::interpstpcomp4
    FUNCTION InterpStpReal8( XVal, XAry, YAry, Ind, AryLen )
 
       ! Function declaration.
@@ -3394,7 +3462,41 @@ CONTAINS
    InterpWrappedStpReal4 = InterpStp( XVal, XAry, YAry, Ind, AryLen )
    
    
-   END FUNCTION InterpWrappedStpReal4 ! ( XVal, XAry, YAry, Ind, AryLen )
+   END FUNCTION InterpWrappedStpReal4
+!=======================================================================
+!> \copydoc nwtc_num::interpwrappedstpreal4
+   FUNCTION InterpWrappedStpReal4_8( XValIn, XAry, YAry, Ind, AryLen )
+
+      ! Function declaration.
+
+   REAL(R8Ki)                   :: InterpWrappedStpReal4_8                         !< The interpolated value of Y at XVal
+
+
+      ! Argument declarations.
+
+   INTEGER, INTENT(IN)          :: AryLen                                          ! Length of the arrays.
+   INTEGER, INTENT(INOUT)       :: Ind                                             ! Initial and final index into the arrays.
+
+   REAL(SiKi), INTENT(IN)       :: XAry    (AryLen)                                ! Array of X values to be interpolated.
+   REAL(SiKi), INTENT(IN)       :: XValIn                                          ! X value to be interpolated.
+   REAL(R8Ki), INTENT(IN)       :: YAry    (AryLen)                                ! Array of Y values to be interpolated.
+
+   REAL(SiKi)                   :: XVal                                            ! X value to be interpolated.
+   
+   
+   
+      ! Wrap XValIn into the range XAry(1) to XAry(AryLen)
+   XVal = MOD(XValIn, XAry(AryLen))
+
+      ! Set the Ind to the first index if we are at the beginning of XAry
+   IF ( XVal <= XAry(2) )  THEN  
+      Ind           = 1
+   END IF
+   
+   InterpWrappedStpReal4_8 = InterpStp( XVal, XAry, YAry, Ind, AryLen )
+   
+   
+   END FUNCTION InterpWrappedStpReal4_8 
 !=======================================================================
 !> \copydoc nwtc_num::interpwrappedstpreal4
    FUNCTION InterpWrappedStpReal8( XValIn, XAry, YAry, Ind, AryLen )
@@ -3428,7 +3530,7 @@ CONTAINS
    InterpWrappedStpReal8 = InterpStp( XVal, XAry, YAry, Ind, AryLen )
    
    
-   END FUNCTION InterpWrappedStpReal8 ! ( XVal, XAry, YAry, Ind, AryLen )
+   END FUNCTION InterpWrappedStpReal8
 !=======================================================================
 !> \copydoc nwtc_num::interpwrappedstpreal4
    FUNCTION InterpWrappedStpReal16( XValIn, XAry, YAry, Ind, AryLen )
@@ -3462,7 +3564,7 @@ CONTAINS
    InterpWrappedStpReal16 = InterpStp( XVal, XAry, YAry, Ind, AryLen )
    
    
-   END FUNCTION InterpWrappedStpReal16 ! ( XVal, XAry, YAry, Ind, AryLen )
+   END FUNCTION InterpWrappedStpReal16 
 !=======================================================================
 !> This subroutine calculates the iosparametric coordinates, isopc, which is a value between -1 and 1 
 !! (for each dimension of a dataset), indicating where InCoord falls between posLo and posHi.
@@ -4029,7 +4131,7 @@ CONTAINS
       
    
    q_norm       = Quaternion_Norm( q )     
-   theta        = acos( q%q0 / q_norm )
+   theta        = acos( max(-1.0_ReKi, min(1.0_ReKi, q%q0 / q_norm)) )
    n            = q%v / TwoNorm(q%v)
    
    greek        = alpha * theta
@@ -5405,10 +5507,10 @@ CONTAINS
 
       ! Argument declarations:
 
-   INTEGER, INTENT(IN)          :: AryLen                                       ! Length of the array.
+   INTEGER, INTENT(IN)          :: AryLen                                       !< Length of the array.
 
-   REAL(ReKi), INTENT(IN)       :: Ary  (AryLen)                                ! Input array.
-   REAL(ReKi), INTENT(IN)       :: Mean                                         ! The previously calculated mean of the array.
+   REAL(ReKi), INTENT(IN)       :: Ary  (AryLen)                                !< Input array.
+   REAL(ReKi), INTENT(IN)       :: Mean                                         !< The previously calculated mean of the array.
 
 
       ! Local declarations.
@@ -5429,7 +5531,86 @@ CONTAINS
 
 
    RETURN
-   END FUNCTION StdDevFn ! ( Ary, AryLen, Mean )
+   END FUNCTION StdDevFn
+!=======================================================================
+!> This function returns the 3x3 skew-symmetric matrix for cross-product
+!! calculation of vector \f$\vec{x}\f$ via matrix multiplication, defined as
+!! \f{equation}{
+!!   f_{_\times}\left( \vec{x} \right) = 
+!!  \begin{bmatrix}
+!!       0  & -x_3 &  x_2 \\
+!!      x_3 &  0   & -x_1 \\
+!!     -x_2 &  x_1 &  0          
+!! \end{bmatrix}
+!! \f}   
+!> Use SkewSymMat (nwtc_num::skewsymmat) instead of directly calling a specific routine in the generic interface.
+   FUNCTION SkewSymMatR4 ( x ) RESULT(M)
+
+      ! Function arguments
+
+   REAL(SiKi)                   :: M(3,3)                          !< skew-symmetric matrix formed from input vector \f$x\f$
+   REAL(SiKi), INTENT(IN)       :: x(3)                            !< input vector \f$x\f$
+
+   M(1,1) =    0.0_SiKi
+   M(2,1) =  x(3)
+   M(3,1) = -x(2)
+
+   M(2,1) = -x(3)
+   M(2,2) =    0.0_SiKi
+   M(2,3) =  x(1)
+
+   M(3,1) =  x(2)
+   M(3,2) = -x(1)
+   M(3,3) =    0.0_SiKi
+   
+   RETURN
+   END FUNCTION SkewSymMatR4 
+!=======================================================================
+!> \copydoc nwtc_num::skewsymmatr4
+   FUNCTION SkewSymMatR8 ( x ) RESULT(M)
+
+      ! Function arguments
+
+   REAL(R8Ki)                   :: M(3,3)                          ! skew-symmetric matrix formed from input vector \f$x\f$
+   REAL(R8Ki), INTENT(IN)       :: x(3)                            ! input vector \f$x\f$
+
+   M(1,1) =    0.0_R8Ki
+   M(2,1) =  x(3)
+   M(3,1) = -x(2)
+
+   M(2,1) = -x(3)
+   M(2,2) =    0.0_R8Ki
+   M(2,3) =  x(1)
+
+   M(3,1) =  x(2)
+   M(3,2) = -x(1)
+   M(3,3) =    0.0_R8Ki
+   
+   RETURN
+   END FUNCTION SkewSymMatR8
+!=======================================================================
+!> \copydoc nwtc_num::skewsymmatr4
+   FUNCTION SkewSymMatR16 ( x ) RESULT(M)
+
+      ! Function arguments
+
+   REAL(QuKi)                   :: M(3,3)                          ! skew-symmetric matrix formed from input vector \f$x\f$
+   REAL(QuKi), INTENT(IN)       :: x(3)                            ! input vector \f$x\f$
+
+   M(1,1) =    0.0_QuKi
+   M(2,1) =  x(3)
+   M(3,1) = -x(2)
+
+   M(2,1) = -x(3)
+   M(2,2) =    0.0_QuKi
+   M(2,3) =  x(1)
+
+   M(3,1) =  x(2)
+   M(3,2) = -x(1)
+   M(3,3) =    0.0_QuKi
+   
+   RETURN
+   END FUNCTION SkewSymMatR16
 !=======================================================================
 !> This routine takes an array of time values such as that returned from
 !!     CALL DATE_AND_TIME ( Values=TimeAry )

@@ -1,6 +1,6 @@
 !**********************************************************************************************************************************
 ! LICENSING
-! Copyright (C) 2013-2015  National Renewable Energy Laboratory
+! Copyright (C) 2013-2016  National Renewable Energy Laboratory
 !
 !    This file is part of the NWTC Subroutine Library.
 !
@@ -17,8 +17,8 @@
 ! limitations under the License.
 !
 !**********************************************************************************************************************************
-! File last committed: $Date: 2016-01-06 09:39:42 -0700 (Wed, 06 Jan 2016) $
-! (File) Revision #: $Rev: 355 $
+! File last committed: $Date: 2016-04-05 21:43:14 -0600 (Tue, 05 Apr 2016) $
+! (File) Revision #: $Rev: 368 $
 ! URL: $HeadURL: https://windsvn.nrel.gov/NWTC_Library/trunk/source/NWTC_IO.f90 $
 !**********************************************************************************************************************************
 
@@ -33,7 +33,7 @@ MODULE NWTC_IO
 !=======================================================================
 
    TYPE(ProgDesc), PARAMETER    :: NWTC_Ver = &                               
-          ProgDesc( 'NWTC Subroutine Library', 'v2.06.05a-bjj', '5-Oct-2015')    !< The name, version, and date of the NWTC Subroutine Library
+          ProgDesc( 'NWTC Subroutine Library', 'v2.08.00', '5-Apr-2016')    !< The name, version, and date of the NWTC Subroutine Library
 
       !> This type stores a linked list of file names, used in MLB-style input file parsing (currently used in AirfoilInfo)
    TYPE, PUBLIC   :: FNlist_Type                                
@@ -210,6 +210,7 @@ MODULE NWTC_IO
 
       !> \copydoc nwtc_io::wrr4aryfilenr
    INTERFACE WrNumAryFileNR
+      MODULE PROCEDURE WrIAryFileNR
       MODULE PROCEDURE WrR4AryFileNR
       MODULE PROCEDURE WrR8AryFileNR
       MODULE PROCEDURE WrR16AryFileNR
@@ -3452,7 +3453,7 @@ CONTAINS
    END SUBROUTINE ParseInAry
 !=======================================================================
 !> This subroutine parses the include information that occurs after a "@" when processing an input file.
-   SUBROUTINE ParseInclInfo ( InclInfo, FileName, RangeBeg, RangeEnd, ErrStat, ErrMsg )
+   SUBROUTINE ParseInclInfo ( InclInfo, RelativePathFileName, FileName, RangeBeg, RangeEnd, ErrStat, ErrMsg )
 
          ! Arguments declarations.
 
@@ -3464,6 +3465,7 @@ CONTAINS
       CHARACTER(*),   INTENT(OUT)            :: ErrMsg                        !< The error message, if ErrStat /= 0.
       CHARACTER(*),   INTENT(OUT)            :: FileName                      !< The file name that was parsed from InclInfo.
       CHARACTER(*),   INTENT(INOUT)          :: InclInfo                      !< The text following the "@" on an input line being processed.
+      CHARACTER(*),   INTENT(IN)             :: RelativePathFileName          !< The name of the file that any new file is relative to.
 
 
          ! Local declarations.
@@ -3474,6 +3476,7 @@ CONTAINS
 
       CHARACTER( 20)                         :: InclInfoUC                    ! InclInfo converted to upper case.
       CHARACTER(512)                         :: Words       (2)               ! The two "words" parsed from the line.
+      CHARACTER(1024)                        :: PriPath                       ! path name of primary file (RelativePathFileName)
       CHARACTER(*), PARAMETER                :: RoutineName = 'ParseInclInfo'
 
       ErrStat = ErrID_None
@@ -3557,6 +3560,12 @@ CONTAINS
             RETURN
          ENDIF ! ( ErrStatLcl /= 0 )
       ENDIF ! ( INDEX( InclInfo, '"' )+INDEX( InclInfo, "'" ) > 0 )
+      
+      IF ( PathIsRelative( Filename ) ) then
+         CALL GetPath( RelativePathFileName, PriPath )     ! Input files will be relative to the path where the primary input file is located.
+         Filename = TRIM(PriPath)//TRIM(Filename)
+      END IF
+            
 
       RETURN
 
@@ -4716,7 +4725,7 @@ CONTAINS
 
                ! Parse the contents of everything after the "@" to determine the name of the include file and the optional line range.
 
-            CALL ParseInclInfo ( Line(2:), IncFileName, RangeBeg, RangeEnd, ErrStatLcl, ErrMsg2 )
+            CALL ParseInclInfo ( Line(2:), FileInfo%FileList(FileIndx), IncFileName, RangeBeg, RangeEnd, ErrStatLcl, ErrMsg2 )
                CALL SetErrStat( ErrStatLcl, TRIM( FileInfo%FileList(FileIndx) )//':Line#'//TRIM( Num2LStr( FileLine ) ) &
                                 //':'//TRIM(ErrMsg2), ErrStat, ErrMsg, RoutineName )
                IF ( ErrStat >= AbortErrLev )  THEN
@@ -6150,7 +6159,7 @@ CONTAINS
 
                   ! Parse the contents of everything after the "@" to determine the name of the include file and the optional line range.
 
-               CALL ParseInclInfo ( Line(2:), IncFileName, RangeBeg, RangeEnd, ErrStatLcl, ErrMsg2 )
+               CALL ParseInclInfo ( Line(2:), Filename, IncFileName, RangeBeg, RangeEnd, ErrStatLcl, ErrMsg2 )
                   CALL SetErrStat( ErrStatLcl, TRIM( FileName )//':Line#'//TRIM( Num2LStr( CurrLine ) )//':'//TRIM(ErrMsg2), ErrStat, ErrMsg, RoutineName )
                   IF (ErrStat >= AbortErrLev) THEN
                      CALL Cleanup()
@@ -6935,6 +6944,47 @@ CONTAINS
    RETURN
    END SUBROUTINE WrR4AryFileNR
 !=======================================================================
+!> This routine writes out an integer array to the file connected to Unit without following it with a new line.
+!! Use WrNumAryFileNR (nwtc_io::wrnumaryfilenr) instead of directly calling a specific routine in the generic interface.   
+   SUBROUTINE WrIAryFileNR ( Unit, Ary, Fmt, ErrStat, ErrMsg  )
+
+      ! Argument declarations.
+
+   INTEGER,        INTENT(IN)   :: Unit                                         !< I/O unit for input file.
+   INTEGER(IntKi), INTENT(IN)   :: Ary (:)                                      !< Array to be written without a newline at the end.
+   CHARACTER(*),   INTENT(IN)   :: Fmt                                          !< Fmt of one element to be written.
+
+   INTEGER(IntKi), INTENT(OUT)  :: ErrStat                                      !< Error status
+   CHARACTER(*),   INTENT(OUT)  :: ErrMsg                                       !< Error message associated with ErrStat
+
+      ! Local variables:
+   CHARACTER(50)                :: Fmt2                                         ! Fmt of entire array to be written (will be copied).
+
+
+
+   IF ( SIZE(Ary) == 0 ) THEN
+      ErrStat = ErrID_None
+      ErrMsg  = ''
+      RETURN
+   END IF
+   
+
+   WRITE(Fmt2,*) SIZE(Ary)
+   Fmt2 = '('//TRIM(Fmt2)//'('//TRIM(Fmt)//'))'
+
+   WRITE (Unit,Fmt2,ADVANCE='NO',IOSTAT=ErrStat)  Ary
+   IF ( ErrStat /= 0 ) THEN
+      ErrStat = ErrID_Fatal
+      ErrMsg = 'WrIAryFileNR:Error '//TRIM(Num2LStr(ErrStat))//' occurred while writing to file using this format: '//TRIM(Fmt2)
+   ELSE
+      ErrStat = ErrID_None
+      ErrMsg  = ''
+   END IF
+
+
+   RETURN
+   END SUBROUTINE WrIAryFileNR
+!=======================================================================
 !> \copydoc nwtc_io::wrr4aryfilenr
    SUBROUTINE WrR8AryFileNR ( Unit, Ary, Fmt, ErrStat, ErrMsg  )
 
@@ -7116,6 +7166,47 @@ CONTAINS
 
    RETURN
    END SUBROUTINE WrScr1
+!=======================================================================
+!> This routine writes out the heading for an vtk xml file (associated footer generated in
+!! nwtc_io::wrvtk_footer). It tries to open a text file for writing and returns the Unit number of the opened file.
+   SUBROUTINE WrVTK_header( FileName, NumberOfPoints, NumberOfLines, NumberOfPolys, Un, ErrStat, ErrMsg ) 
+   
+      CHARACTER(*)    , INTENT(IN   )        :: FileName             !< Name of output file
+      INTEGER(IntKi)  , INTENT(IN   )        :: NumberOfPoints       !< Number of points in this VTK file
+      INTEGER(IntKi)  , INTENT(IN   )        :: NumberOfLines        !< Number of lines in this VTK file
+      INTEGER(IntKi)  , INTENT(IN   )        :: NumberOfPolys        !< Number of polygons in this VTK file
+      INTEGER(IntKi)  , INTENT(  OUT)        :: Un                   !< unit number of opened file
+      INTEGER(IntKi)  , INTENT(  OUT)        :: ErrStat              !< error level/status of OpenFOutFile operation
+      CHARACTER(*)    , INTENT(  OUT)        :: ErrMsg               !< message when error occurs
+   
+      CALL GetNewUnit( Un, ErrStat, ErrMsg )      
+      CALL OpenFOutFile ( Un, TRIM(FileName), ErrStat, ErrMsg )
+         if (ErrStat >= AbortErrLev) return
+      
+      ! Write a VTP mesh file (Polygonal VTK file) with positions and polygons (surfaces)
+      ! (note alignment of WRITE statements to make sure spaces are lined up in XML file)
+      WRITE(Un,'(A)')         '<?xml version="1.0"?>'
+      WRITE(Un,'(A)')         '<VTKFile type="PolyData" version="0.1" byte_order="LittleEndian">' ! bjj note: we don't have binary data in this file, so byte_order shouldn't matter, right?
+      WRITE(Un,'(A)')         '  <PolyData>'
+      WRITE(Un,'(2(A,i7),A)') '    <Piece NumberOfPoints="', NumberOfPoints, '" NumberOfVerts="  0" NumberOfLines="', NumberOfLines, '"'
+      WRITE(Un,'(A,i7,A)')    '           NumberOfStrips="  0" NumberOfPolys="',  NumberOfPolys, '">'
+   
+      RETURN
+   END SUBROUTINE WrVTK_header
+!=======================================================================
+!> This routine writes out the footer for an vtk xml file (associated header generated  
+!! in nwtc_io::wrvtk_header). It closes the file Un.
+   SUBROUTINE WrVTK_footer( Un ) 
+   
+      INTEGER(IntKi)  , INTENT(IN   )        :: Un                   !< unit number of opened file
+         
+      WRITE(Un,'(A)')         '    </Piece>'
+      WRITE(Un,'(A)')         '  </PolyData>'
+      WRITE(Un,'(A)')         '</VTKFile>'
+      CLOSE(Un)         
+   
+      RETURN
+   END SUBROUTINE WrVTK_footer
 !=======================================================================
 
 END MODULE NWTC_IO

@@ -10,11 +10,11 @@ REM  Set up environment variables.  You will probably have to change these.
 rem @SET CRUNCH=Call Crunch
 
 @SET MATLAB=matlab
-@SET MBC_SOURCE=C:\Users\bjonkman\Documents\DATA\Downloads\MBC\Source
-rem @SET MBC_SOURCE=C:\Users\bjonkman\Data\DesignCodes\MBC\Source
 @SET DateTime=DateTime.exe
 @SET Editor=NotePad.EXE
 @SET CompareFile=CertTest.out
+
+@SET ResultsDir=NREL_RESULTS
 
 ::=======================================================================================================
 IF /I "%1"=="-DEBUG" GOTO debugVer
@@ -161,7 +161,13 @@ rem ******************************************************
 
 %SubDyn% Test%1.dvr
 
+
 IF ERRORLEVEL 1  GOTO ERROR
+
+rem echo %DASHES%                          >> %CompareFile%
+rem %Compare% Test%1\Test%1.SD.out Test%1\%ResultsDir%\Test%1.SD.out >> %CompareFile%
+rem %Compare% Test%1\Test%1.SD.sum Test%1\%ResultsDir%\Test%1.SD.sum >> %CompareFile%
+
 
 echo %DASHES%
 
