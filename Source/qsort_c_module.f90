@@ -1,7 +1,7 @@
 !**********************************************************************************************************************************
-! File last committed: $Date$
-! (File) Revision #: $Rev$
-! URL: $HeadURL$
+! File last committed: $Date: 2014-07-01 19:41:13 -0600 (Tue, 01 Jul 2014) $
+! (File) Revision #: $Rev: 315 $
+! URL: $HeadURL: https://wind-dev2.nrel.gov/svn/SubDyn/branches/v1.03.00a-rrd/Source/qsort_c_module.f90 $
 !**********************************************************************************************************************************
 module qsort_c_module
 !This routine ASSUMES A is (m,2) dimensioned array

@@ -29,12 +29,12 @@ JointID          JointXss               JointYss               JointZss  [Coordi
   12             -4.79180                0.00000               -8.06090
 ------------------- BASE REACTION JOINTS: 1/0 for Locked/Free DOF @ each Reaction Node ---------------------
              4   NReact      - Number of Joints with reaction forces; be sure to remove all rigid motion DOFs of the structure  (else det([K])=[0])
-RJointID   RctTDXss    RctTDYss    RctTDZss    RctRDXss    RctRDYss    RctRDZss     [Global Coordinate System]
-  (-)       (flag)      (flag)      (flag)      (flag)      (flag)      (flag)
-   1           1           1           1           1           1           1
-   2           1           1           1           1           1           1
-   3           1           1           1           1           1           1
-   4           1           1           1           1           1           1
+RJointID   RctTDXss    RctTDYss    RctTDZss    RctRDXss    RctRDYss    RctRDZss    SSIfile   [Global Coordinate System]  [Global Coordinate System]
+  (-)       (flag)      (flag)      (flag)      (flag)      (flag)      (flag)	  (string)
+   1           1           1           1           1           1           1	    "" 
+   2           1           1           1           1           1           1        ""
+   3           1           1           1           1           1           1        ""
+   4           1           1           1           1           1           1        ""
 ------- INTERFACE JOINTS: 1/0 for Locked (to the TP)/Free DOF @each Interface Joint (only Locked-to-TP implemented thus far (=rigid TP)) ---------
              4   NInterf     - Number of interface joints locked to the Transition Piece (TP):  be sure to remove all rigid motion dofs
 IJointID   ItfTDXss    ItfTDYss    ItfTDZss    ItfRDXss    ItfRDYss    ItfRDZss     [Global Coordinate System]
@@ -91,8 +91,8 @@ COSMID    COSM11    COSM12    COSM13    COSM21    COSM22    COSM23    COSM31    
  (-)       (-)       (-)       (-)       (-)       (-)       (-)       (-)       (-)       (-)
 ------------------------ JOINT ADDITIONAL CONCENTRATED MASSES--------------------------
              0   NCmass      - Number of joints with concentrated masses; Global Coordinate System
-CMJointID       JMass            JMXX             JMYY             JMZZ
-  (-)            (kg)          (kg*m^2)         (kg*m^2)         (kg*m^2)
+CMJointID       JMass            JMXX             JMYY             JMZZ            JMXY             JMXZ             JMYZ              MCGX           MCGY          MCGZ
+  (-)            (kg)          (kg*m^2)         (kg*m^2)         (kg*m^2)	 (kg*m^2)          (kg*m^2)        (kg*m^2)            (m)             (m)           (m)
 ---------------------------- OUTPUT: SUMMARY & OUTFILE ------------------------------
 True             SSSum       - Output a Summary File (flag).It contains: matrices K,M  and C-B reduced M_BB, M-BM, K_BB, K_MM(OMG^2), PHI_R, PHI_L. It can also contain COSMs if requested.
 True             OutCOSM     - Output cosine matrices with the selected output member forces (flag)

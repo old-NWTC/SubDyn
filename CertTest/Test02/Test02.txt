@@ -4,12 +4,12 @@ This is for a 2D house example.
 False            Echo        - Echo input data to "<rootname>.SD.ech" (flag)
 "DEFAULT"        SDdeltaT    - Local Integration Step. If "default", the glue-code integration step will be used.
              4   IntMethod   - Integration Method [1/2/3/4 = RK4/AB4/ABM4/AM2].
-False            SttcSolve   - Solve dynamics about static equilibrium point
+True False            SttcSolve   - Solve dynamics about static equilibrium point
 -------------------- FEA and CRAIG-BAMPTON PARAMETERS---------------------------
              1   FEMMod      - FEM switch: element model in the FEM. [1= Euler-Bernoulli(E-B);  2=Tapered E-B (unavailable);  3= 2-node Timoshenko;  4= 2-node tapered Timoshenko (unavailable)]
              1   NDiv        - Number of sub-elements per member
 true             CBMod       - [T/F] If True perform C-B reduction, else full FEM dofs will be retained. If True, select Nmodes to retain in C-B reduced system.
-            12   Nmodes      - Number of internal modes to retain (ignored if CBMod=False). If Nmodes=0 --> Guyan Reduction.
+           0 12   Nmodes      - Number of internal modes to retain (ignored if CBMod=False). If Nmodes=0 --> Guyan Reduction.
             20   JDampings   - Damping Ratios for each retained mode (% of critical) If Nmodes>0, list Nmodes structural damping ratios for each retained mode (% of critical), or a single damping ratio to be applied to all retained modes. (last entered value will be used for all remaining modes).
 ---- STRUCTURE JOINTS: joints connect structure members (~Hydrodyn Input File)---
              5   NJoints     - Number of joints (-)
@@ -22,10 +22,10 @@ JointID          JointXss               JointYss               JointZss  [Coordi
    5             15.00000                0.00000              -20.00000
 ------------------- BASE REACTION JOINTS: 1/0 for Locked/Free DOF @ each Reaction Node ---------------------
              2   NReact      - Number of Joints with reaction forces; be sure to remove all rigid motion DOFs of the structure  (else det([K])=[0])
-RJointID   RctTDXss    RctTDYss    RctTDZss    RctRDXss    RctRDYss    RctRDZss     [Global Coordinate System]
-  (-)       (flag)      (flag)      (flag)      (flag)      (flag)      (flag)
-   1           1           1           1           1           1           1
-   5           1           1           1           1           1           1
+RJointID   RctTDXss    RctTDYss    RctTDZss    RctRDXss    RctRDYss    RctRDZss  SSIfile   [Global Coordinate System]
+  (-)       (flag)      (flag)      (flag)      (flag)      (flag)      (flag)	(string)
+   1           1           1           1           1           1           1      "" "Test02\SSI_KMmatrices.dat"
+   5           1           1           1           1           1           1      ""   "Test02\SSI_KMmatrices.dat" 
 ------- INTERFACE JOINTS: 1/0 for Locked (to the TP)/Free DOF @each Interface Joint (only Locked-to-TP implemented thus far (=rigid TP)) ---------
              1   NInterf     - Number of interface joints locked to the Transition Piece (TP):  be sure to remove all rigid motion dofs
 IJointID   ItfTDXss    ItfTDYss    ItfTDZss    ItfRDXss    ItfRDYss    ItfRDZss     [Global Coordinate System]
@@ -56,9 +56,9 @@ COSMID    COSM11    COSM12    COSM13    COSM21    COSM22    COSM23    COSM31    
  (-)       (-)       (-)       (-)       (-)       (-)       (-)       (-)       (-)       (-)
 ------------------------ JOINT ADDITIONAL CONCENTRATED MASSES--------------------------
              1   NCmass      - Number of joints with concentrated masses; Global Coordinate System
-CMJointID       JMass            JMXX             JMYY             JMZZ
-  (-)            (kg)          (kg*m^2)         (kg*m^2)         (kg*m^2)
-   3         3.50000e+05    0.00000e+00      0.00000e+00      0.00000e+00
+CMJointID       JMass            JMXX             JMYY             JMZZ         JMXY             JMXZ             JMYZ              MCGX           MCGY          MCGZ
+  (-)            (kg)          (kg*m^2)         (kg*m^2)         (kg*m^2)     (kg*m^2)          (kg*m^2)        (kg*m^2)            (m)             (m)           (m)
+   3         3.50000e+05    0.00000e+00      0.00000e+00      0.00000e+00      0.00                0.00             0.00             0.00          0.00           0.00
 ---------------------------- OUTPUT: SUMMARY & OUTFILE ------------------------------
 True             SSSum       - Output a Summary File (flag).It contains: matrices K,M  and C-B reduced M_BB, M-BM, K_BB, K_MM(OMG^2), PHI_R, PHI_L. It can also contain COSMs if requested.
 True             OutCOSM     - Output cosine matrices with the selected output member forces (flag)

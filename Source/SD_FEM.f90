@@ -16,9 +16,9 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !**********************************************************************************************************************************
-! File last committed: $Date$
-! (File) Revision #: $Rev$
-! URL: $HeadURL$
+! File last committed: $Date: 2016-06-24 12:16:38 -0600 (Fri, 24 Jun 2016) $
+! (File) Revision #: $Rev: 372 $
+! URL: $HeadURL: https://wind-dev2.nrel.gov/svn/SubDyn/branches/v1.03.00a-rrd/Source/SD_FEM.f90 $
 !**********************************************************************************************************************************
 MODULE SD_FEM
   USE NWTC_Library
@@ -41,7 +41,7 @@ MODULE SD_FEM
   INTEGER(IntKi),   PARAMETER  :: PropSetsCol     = 6                     ! Number of columns in PropSets  (PropSetID,YoungE,ShearG,MatDens,XsecD,XsecT)  !bjj: this really doesn't need to store k, does it? or is this supposed to be an ID, in which case we shouldn't be storing k (except new property sets), we should be storing IDs
   INTEGER(IntKi),   PARAMETER  :: XPropSetsCol    = 10                    ! Number of columns in XPropSets (PropSetID,YoungE,ShearG,MatDens,XsecA,XsecAsx,XsecAsy,XsecJxx,XsecJyy,XsecJ0)
   INTEGER(IntKi),   PARAMETER  :: COSMsCol        = 10                    ! Number of columns in (cosine matrices) COSMs (COSMID,COSM11,COSM12,COSM13,COSM21,COSM22,COSM23,COSM31,COSM32,COSM33)
-  INTEGER(IntKi),   PARAMETER  :: CMassCol        = 5                     ! Number of columns in Concentrated Mass (CMJointID,JMass,JMXX,JMYY,JMZZ)
+  INTEGER(IntKi),   PARAMETER  :: CMassCol        = 11                     ! Number of columns in Concentrated Mass (CMJointID,JMass,JMXX,JMYY,JMZZ,JMXY,JMXZ,JMYZ,CGX,CGY,CGZ)
   
   INTEGER(IntKi),   PARAMETER  :: SDMaxInpCols    = MAX(JointsCol,ReactCol,InterfCol,MembersCol,PropSetsCol,XPropSetsCol,COSMsCol,CMassCol)
     CONTAINS
@@ -551,11 +551,12 @@ SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
    REAL(ReKi)               :: r1, r2, t, Iyy, Jzz, Ixx, A, kappa, nu, ratioSq, D_inner, D_outer
    LOGICAL                  :: shear
    REAL(ReKi), ALLOCATABLE  :: Ke(:,:), Me(:, :), FGe(:) ! element stiffness and mass matrices gravity force vector
+   REAL(ReKi), DIMENSION(6,6)  :: SSIK, SSIM ! Auxiliary stiffness Matrix for SSI
    INTEGER, ALLOCATABLE     :: nn(:)                     ! node number in element 
    INTEGER                  :: r
    
    
-   INTEGER(IntKi)           :: ErrStat2
+   INTEGER(IntKi)           :: ErrStat2,info
    CHARACTER(1024)          :: ErrMsg2
 
    
@@ -586,7 +587,12 @@ SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
    CALL AllocAry( nn,     NNE,                   'nn',      ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! node number in element array 
    
    CALL AllocAry( Init%K, Init%TDOF, Init%TDOF , 'Init%K',  ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! system stiffness matrix 
-   CALL AllocAry( Init%m, Init%TDOF, Init%TDOF , 'Init%M',  ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! system mass matrix 
+   CALL AllocAry( Init%M, Init%TDOF, Init%TDOF , 'Init%M',  ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! system mass matrix 
+   CALL AllocAry( Init%Korig, Init%TDOF, Init%TDOF , 'Init%Korig',  ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! will remain full system stiffness matrix 
+   CALL AllocAry( Init%Morig, Init%TDOF, Init%TDOF , 'Init%Morig',  ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! will remain full  system mass matrix 
+   CALL AllocAry( Init%KorignoSSI, Init%TDOF, Init%TDOF , 'Init%KorignoSSI',  ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! will remain full system stiffness matrix  no SSI contrib
+   CALL AllocAry( Init%MorignoSSI, Init%TDOF, Init%TDOF , 'Init%MorignoSSI',  ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! will remain full system mass matrix  no SSI contrib
+   
    CALL AllocAry( Init%FG,Init%TDOF,             'Init%FG', ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! system gravity force vector 
     
    IF (ErrStat >= AbortErrLev) THEN
@@ -733,21 +739,71 @@ SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
                      
    ENDDO ! I end loop over elements
                
-      
+   
       ! add concentrated mass 
    DO I = 1, Init%NCMass
       DO J = 1, 3
           r = ( NINT(Init%CMass(I, 1)) - 1 )*6 + J
           Init%M(r, r) = Init%M(r, r) + Init%CMass(I, 2)
-          
+          SELECT CASE(J)
+          CASE (1)
+              Init%M(r, r+4:r+5)     =Init%M(r, r+4:r+5)     + Init%CMass(I, 1)*(/Init%CMass(I, 11),-Init%CMass(I, 10)/)
+              Init%M(r+4:r+5, r)     =Init%M(r+4:r+5,r)      + Init%CMass(I, 1)*(/Init%CMass(I, 11),-Init%CMass(I, 10)/)
+          CASE (2)
+              Init%M(r, (/r+3,r+5/)) =Init%M(r, (/r+3,r+5/)) + Init%CMass(I, 1)*(/-Init%CMass(I, 11),Init%CMass(I,9)/)
+              Init%M((/r+3,r+5/),r) =Init%M((/r+3,r+5/),r) + Init%CMass(I, 1)*(/-Init%CMass(I, 11),Init%CMass(I,9)/)
+          CASE (3)
+              Init%M(r, (/r+3,r+4/)) =Init%M(r, (/r+3,r+4/)) + Init%CMass(I, 1)*(/Init%CMass(I, 11),-Init%CMass(I, 9)/)
+              Init%M((/r+3,r+4/),r) =Init%M((/r+3,r+4/),r) + Init%CMass(I, 1)*(/Init%CMass(I, 11),-Init%CMass(I, 9)/)
+          END SELECT
       ENDDO
       DO J = 4, 6
           r = ( NINT(Init%CMass(I, 1)) - 1 )*6 + J
           Init%M(r, r) = Init%M(r, r) + Init%CMass(I, J-1)
-      ENDDO
+          SELECT CASE(J)
+          CASE (1)
+              Init%M(r, r+4:r+5)     =Init%M(r, r+4:r+5)     + (/Init%CMass(I, 6),Init%CMass(I, 7)/)
+              Init%M(r+4:r+5, r)     =Init%M(r+4:r+5,r)      + (/Init%CMass(I, 6),Init%CMass(I, 7)/)
+          CASE (2)
+              Init%M(r, (/r+3,r+5/)) =Init%M(r, (/r+3,r+5/)) + (/Init%CMass(I, 6),Init%CMass(I,8)/)
+              Init%M((/r+3,r+5/),r) =Init%M((/r+3,r+5/),r)   + (/Init%CMass(I, 6),Init%CMass(I,8)/)
+          CASE (3)
+              Init%M(r, (/r+3,r+4/)) =Init%M(r, (/r+3,r+4/)) + (/Init%CMass(I, 7),Init%CMass(I, 8)/)
+              Init%M((/r+3,r+4/),r) =Init%M((/r+3,r+4/),r)   + (/Init%CMass(I, 7),Init%CMass(I, 8)/)
+          END SELECT
 
+      ENDDO
    ENDDO ! I concentrated mass
  
+   Init%MorignoSSI=Init%M  !original M, full and no SSI m
+   Init%KorignoSSI=Init%K  !original K, full and no SSI k
+   
+   IF (ANY(Init%SSIK .NE. HUGE(Init%SSIK)) .OR. ANY(Init%SSIM  .NE. 0.0_ReKi)) THEN
+     !AUGMENT FOR SSI- need to find rows and columns
+     SSIK=0.0_ReKi !initialize
+     SSIM=0.0_ReKi !initialize
+   DO I=1, p%NReact  !Do this for all Constraint Nodes
+     !first reconstruct K, M from sparse elements; these elements are of a 6x6 matrix that goes at (Node*6-5:Node*6,Node*6-5:Node*6) only, because it is on one element only, and one node of that
+     CALL STPTTR('U',6,Init%SSIK(I,:),SSIK,6,info)
+     CALL STPTTR('U',6,Init%SSIM(I,:),SSIM,6,info)
+     DO J=1,6
+        SSIK(J,J)=SSIK(J,J)/2
+        SSIM(J,J)=SSIM(J,J)/2
+     ENDDO   
+     SSIK=SSIK+TRANSPOSE(SSIK)  !Full symmetric matrix
+     SSIM=SSIM+TRANSPOSE(SSIM)
+     
+     jn=p%Reacts(I,1)*6 -5
+     Init%K( jn:jn+5, jn:jn+5 ) = Init%K( jn:jn+5, jn:jn+5 ) + SSIK
+     Init%M( jn:jn+5, jn:jn+5 ) = Init%M( jn:jn+5, jn:jn+5 ) + SSIM
+     
+   ENDDO
+   ENDIF
+   !END OF SSI 
+   
+   Init%Morig=Init%M  !original M, full and WITH SSI-k effects
+   Init%Korig=Init%K  !original K, full and WITH SSI-k effects
+   
       ! add concentrated mass induced gravity force
    DO I = 1, Init%NCMass
       

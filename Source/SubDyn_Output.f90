@@ -17,9 +17,9 @@
 ! limitations under the License.
 !
 !**********************************************************************************************************************************
-! File last committed: $Date$
-! (File) Revision #: $Rev$
-! URL: $HeadURL$
+! File last committed: $Date: 2016-06-25 16:19:09 -0600 (Sat, 25 Jun 2016) $
+! (File) Revision #: $Rev: 374 $
+! URL: $HeadURL: https://wind-dev2.nrel.gov/svn/SubDyn/branches/v1.03.00a-rrd/Source/SubDyn_Output.f90 $
 !**********************************************************************************************************************************
 MODULE SubDyn_Output
 
@@ -4242,8 +4242,8 @@ SUBROUTINE SDOut_MapOutputs( CurrentTime, u,p,x, y, m, AllOuts, ErrStat, ErrMsg 
    Real(ReKi), ALLOCATABLE                  :: ReactNs(:)    !6*Nreact reactions
    REAL(ReKi)                               :: Tmp_Udotdot(12), Tmp_y2(12) !temporary storage for calls to CALC_LOCAL
    
-   Real(reKi), DIMENSION( p%URbarL+p%DOFL+6*p%Nreact)      :: yout            ! modifications to Y2 and Udotdot to include constrained node DOFs
-   Real(ReKi),  DIMENSION(p%URbarL+p%DOFL+6*p%Nreact)      ::uddout           ! modifications to Y2 and Udotdot to include constrained node DOFs
+   Real(reKi), DIMENSION( p%URbarL+p%DOFL+p%DOFCR)      :: yout            ! modifications to Y2 and Udotdot to include constrained node DOFs
+   Real(ReKi),  DIMENSION(p%URbarL+p%DOFL+p%DOFCR)      ::uddout           ! modifications to Y2 and Udotdot to include constrained node DOFs
    Integer(IntKi)                              ::sgn !+1/-1 for node force calculations
    ErrStat = ErrID_None   
    ErrMsg  = ""

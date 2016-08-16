@@ -3,9 +3,9 @@
 #
 # Use ^ as a shortcut for the value in the same column from the previous line.
 ###################################################################################################################################
-# File last committed $Date$
-# (File) Revision #: $Rev$
-# URL: $HeadURL$
+# File last committed $Date: 2016-06-25 16:19:09 -0600 (Sat, 25 Jun 2016) $
+# (File) Revision #: $Rev: 374 $
+# URL: $HeadURL: https://wind-dev2.nrel.gov/svn/SubDyn/branches/v1.03.00a-rrd/Source/SubDyn_Registry.txt $
 ###################################################################################################################################
 # ...... Include files (definitions from NWTC Library) ............................................................................
 include	Registry_NWTC_Library.txt
@@ -44,11 +44,13 @@ typedef	^	MeshAuxDataType	ReKi   	Fg2     	{12}{2}	-	-	"Gravity load vector conn
 # CB_MatArrays: Matrices and arrays for CB summary
 typedef	SubDyn/SD	CB_MatArrays	INTEGER	DOFM	-	-	-	"retained degrees of freedom (modes)"
 typedef	^	CB_MatArrays	ReKi   	TI2	{:}{:}	-	-	"TI2 matrix to refer to total mass to (0,0,0)"
-typedef	^	CB_MatArrays	ReKi   	MBB	{:}{:}	-	-	"FULL MBB ( no constraints applied)"
-typedef	^	CB_MatArrays	ReKi   	MBM	{:}{:}	-	-	"FULL MBM ( no constraints applied)"
-typedef	^	CB_MatArrays	ReKi   	KBB	{:}{:}	-	-	"FULL KBB ( no constraints applied)"
+typedef	^	CB_MatArrays	ReKi   	MBBnoSSI	{:}{:}	-	-	"Full MBB with NO contribution from SSI"
+typedef	^	CB_MatArrays	ReKi   	MBBb	{:}{:}	-	-	"Reduced MBB (bar) (fixed constraints' DOFs removed)"
+typedef	^	CB_MatArrays	ReKi   	MBMb	{:}{:}	-	-	"Reduced MBM (bar) (fixed constraints' DOFs removed)"
+typedef	^	CB_MatArrays	ReKi   	KBBb	{:}{:}	-	-	"Reduced KBB (bar) (fixed constraints' DOFs removed)"
 typedef	^	CB_MatArrays	ReKi   	PhiL	{:}{:}	-	-	"Retained CB modes, possibly allPhiL(DOFL,DOFL), or PhiL(DOFL,DOFM)"
-typedef	^	CB_MatArrays	ReKi   	PhiR	{:}{:}	-	-	"FULL PhiR ( no constraints applied)"
+typedef	^	CB_MatArrays	ReKi   	PhiRb	{:}{:}	-	-	"Reduced PhiR (bar) (fixed constraints' DOFs removed)"
+typedef	^	CB_MatArrays	ReKi   	PhiRnoSSI	{:}{:}	-	-	"Full PhiR NO contributions from SSI"
 typedef	^	CB_MatArrays	ReKi   	OmegaL	{:}	-	-	"Eigenvalues of retained CB modes, possibly all (DOFL or DOFM)"
 # FEM_MatArrays: Matrices and arrays for FEM summary
 typedef	SubDyn/SD	FEM_MatArrays	ReKi   	Omega	{:}	-	-	"Eigenvalues of full FEM model,  we calculate them all"
@@ -94,6 +96,9 @@ typedef	^	^	INTEGER	Interf	{:}{:}	-	-	"Interface degree of freedoms"
 typedef	^	^	CHARACTER(10)	SSOutList	{:}	-	-	"List of Output Channels"
 typedef	^	^	LOGICAL	OutCOSM	-	-	-	"Output Cos-matrices Flag"
 typedef	^	^	LOGICAL	TabDelim	-	-	-	"Generate a tab-delimited output file in OutJckF-Flag"
+typedef	^	^	ReKi	SSIK	{:}{:}	-	-	"SSI stiffness packed matrix elements (21 of them), for each reaction joint"
+typedef	^	^	ReKi	SSIM	{:}{:}	-	-	"SSI mass packed matrix elements (21 of them), for each reaction joint"
+typedef	^	^	CHARACTER(1024)	SSIfile {:}	-	-	"SSI files to associate with each reaction node"
 #-------------------------- arrays and variables used in the module ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 typedef	^	^	INTEGER	NNode	-	-	-	"Total number of nodes"
 typedef	^	^	INTEGER	NElem	-	-	-	"Total number of elements"
@@ -101,8 +106,12 @@ typedef	^	^	INTEGER	NProp	-	-	-	"Total number of property sets"
 typedef	^	^	INTEGER	TDOF	-	-	-	"Total degree of freedom"
 typedef	^	^	ReKi	Nodes	{:}{:}	-	-	"Nodes number and coordinates"
 typedef	^	^	ReKi	Props	{:}{:}	-	-	"Property sets and values"
-typedef	^	^	ReKi	K	{:}{:}	-	-	"System stiffness matrix"
-typedef	^	^	ReKi	M	{:}{:}	-	-	"System mass matrix"
+typedef	^	^	ReKi	K	{:}{:}	-	-	"System stiffness matrix (fixed DOFS removed)"
+typedef	^	^	ReKi	M	{:}{:}	-	-	"System mass matrix (fixed DOFS removed)"
+typedef	^	^	ReKi	Korig	{:}{:}	-	-	"System stiffness matrix (full)"
+typedef	^	^	ReKi	KorignoSSI	{:}{:}	-	-	"System stiffness matrix (full) no SSI contribution"
+typedef	^	^	ReKi	Morig	{:}{:}	-	-	"System mass matrix (full)"
+typedef	^	^	ReKi	MorignoSSI	{:}{:}	-	-	"System mass matrix (full)  no SSI contribution"
 typedef	^	^	ReKi	F	{:}	-	-	"System force vector"	N
 typedef	^	^	ReKi	FG	{:}	-	-	"Gravity force vector"	N
 typedef	^	^	ReKi	ElemProps	{:}{:}	-	-	"Element properties(A, L, Ixx, Iyy, Jzz, Shear, Kappa, E, G, Rho, DirCos(1,1), DirCos(2, 1), ....., DirCos(3, 3) )"
@@ -186,7 +195,9 @@ typedef	^	ParameterType	IntKi	NNodes_L	-	-	-	"Number of Internal nodes"
 typedef	^	ParameterType	IntKi	NNodes_RbarL	-	-	-	"Number of Interface + Internal nodes"
 typedef	^	ParameterType	IntKi	DofI	-	-	-	"Interface nodes # of DOFs"
 typedef	^	ParameterType	IntKi	DofR	-	-	-	"Interface and restrained nodes # of DOFs"
-typedef	^	ParameterType	IntKi	DofC	-	-	-	"Contrained nodes # of DOFs"
+typedef	^	ParameterType	IntKi	DofC	-	-	-	"Restrained-nodes # of DOFs"
+typedef	^	ParameterType	IntKi	DofCk	-	-	-	"Restrained-nodes # of DOFs that are not locked"
+typedef	^	ParameterType	IntKi	DofCr	-	-	-	"Restrained-nodes # of DOFs that are locked"
 typedef	^	ParameterType	IntKi	NReact	-	-	-	"Number of joints with reactions"
 typedef	^	ParameterType	IntKi	Reacts	{:}{:}	-	-	"React degree of freedoms"
 typedef	^	ParameterType	IntKi	Nmembers	-	-	-	"Number of members of the sub structure"
@@ -196,7 +207,9 @@ typedef	^	ParameterType	IntKi	NAvgEls	-	2	-	"Max number of elements that should 
 typedef	^	ParameterType	IntKi	IDI	{:}	-	-	"Index array of the interface(nodes connect to TP) dofs"
 typedef	^	ParameterType	IntKi	IDR	{:}	-	-	"Index array of the interface and restraint dofs"
 typedef	^	ParameterType	IntKi	IDL	{:}	-	-	"Index array of the internal dofs"
-typedef	^	ParameterType	IntKi	IDC	{:}	-	-	"Index array of the contraint dofs"
+typedef	^	ParameterType	IntKi	IDC	{:}	-	-	"Index array of the restraint dofs (fixed or not)"
+typedef	^	ParameterType	IntKi	IDCK {:}	-	-	"Index array of the restraint dofs that are not fixed"
+typedef	^	ParameterType	IntKi	IDCR {:}	-	-	"Index array of the restraint dofs that are fixed"
 typedef	^	ParameterType	IntKi	IDY	{:}	-	-	"Index array of the all dofs in Y2"
 typedef	^	ParameterType	IntKi	NMOutputs	-	- 	-	"Number of members whose output is written"
 typedef	^	ParameterType	IntKi	NumOuts	-	-	-	"Number of output channels read from input file"
